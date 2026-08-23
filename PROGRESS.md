@@ -11,14 +11,56 @@
 
 ## Right now
 
-_Last updated: 2026-08-23 by Priyansh_
+_Last updated: 2026-08-23 by **Priyansh**_
 
 | | Working on | Branch | Expect to finish | Blocked by |
 |---|---|---|---|---|
-| **Sagar** | _not started_ | — | — | — |
-| **Priyansh** | _not started_ | — | — | — |
+| **Sagar** | _not started_ — Workstream B (the loop) is yours and nothing blocks it | — | — | — |
+| **Priyansh** | Repo set up and seeded. Next: Workstream A, clear the ground | `main` | — | — |
 
 **Next joint checkpoint:** _(set a date)_
+
+**Sagar — read this first.** The repo is no longer empty. The entire Round 1 archive is now
+in it, so you don't need anything off a shared drive or the old repo. Start at
+`START_HERE.txt`, then `4_Design_Documents/DigitalTwin_Three_Pipelines.pdf` — that is the
+source of truth, not the old README. Then `DigitalTwin_Model_Parameters.pdf` for what
+actually feeds the model.
+
+---
+
+## Work log
+
+Append-only, newest at the top. One line per meaningful change, so whoever was away can
+catch up without reading diffs.
+
+| Date | Who | What | Commit |
+|---|---|---|---|
+| 2026-08-23 | **Priyansh** | Committed the full Round 1 archive into the repo — guide, Round 2 plan, Round 1 submission (deck, PDF, 2:53 pitch video), design documents, animation sources, code snapshot zip. 24 files, ~34 MB. **The repo is now the single source of truth**; the Desktop handover folder is a copy, not the original. | `d843ba8` |
+| 2026-08-23 | **Priyansh** | Added `DigitalTwin_Model_Parameters.pdf` — the two parameter tables (51 bottleneck, 37 defect) with an explanation for every field. This is the contract for what feeds the model; agree any change to it before coding against it. | `d843ba8` |
+| 2026-08-23 | **Priyansh** | Created this file — status board, file-ownership split, decision log, the nine defects carried from Round 1, and the gap list against the brief. | `f7a4860` |
+
+---
+
+## Repo layout
+
+| Path | What it is |
+|---|---|
+| `PROGRESS.md` | **This file — the canonical copy. Edit this one.** |
+| `DigitalTwin_Model_Parameters.pdf` | Every parameter fed to the model, with explanations |
+| `1_Guide/` | Project guide — what is built, what is designed, what failed |
+| `2_Plan/` | The original Round 2 plan. Superseded on sequencing by the status board below |
+| `3_Round1_Submission/` | Deck, PDF and pitch video exactly as submitted |
+| `4_Design_Documents/` | **Source of truth.** Three Pipelines (21pp), Evidence File (6pp), official brief |
+| `5_Animation_Sources/` | Self-contained HTML animations, captioned MP4, result figures |
+| `6_Code/` | Round 1 codebase snapshot. Live version: `github.com/sagar2907/HipHipHooray_DigitalTwin.ai` |
+| `7_Prototype/` | Round 2 prototype work goes here |
+
+> **Two housekeeping items, both for whoever gets there first:**
+> 1. There are two copies of this file — root and `7_Prototype/`. Root is canonical.
+>    Delete `7_Prototype/PROGRESS.md` before they diverge.
+> 2. The video, pptx and zip are ~30 MB and are now permanent in git history. Fine at this
+>    size, but don't add more large binaries. Datasets stay gitignored and get regenerated
+>    from the seeded builders.
 
 ---
 
