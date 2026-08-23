@@ -4,12 +4,49 @@
 **Team:** Sagar Sahu (`@sagar2907`) · Priyansh Goyal (`@Priyansh0704`)
 **Accenture Innovation Challenge 2026 — Problem Statement 4, Round 2**
 
-> **Both of us write to this file.** It is the one place either of us can look to know
-> what the other has done, what is locked, and what is blocked.
+> **Both of us write to this file, and everything we do on this project lands here.**
+> It is the one place either of us can look to know what the other has done, what is
+> locked, and what is blocked.
 >
-> **The rule:** update **Right now** before you stop for the day, and add a **Work log**
-> line for anything that changes the project. Keep entries short — one line, what changed
-> and why it matters. Detail belongs in the commit, not here.
+> **The rule — no work is finished until this file reflects it:**
+> 1. Add a **Work log** line — one line, what changed and why it matters
+> 2. Update the **Timeline** with the date
+> 3. Move the **Status board** row if a workstream advanced
+> 4. Update **Right now** before you stop for the day
+>
+> Do all four **in the same commit as the work itself**. Keep it summarised — detail
+> belongs in the commit message, not here.
+
+---
+
+## Timeline
+
+**Round 2 deadline:** _(set this — everything below hangs off it)_
+
+```
+  A ──▶ B ──▶ C ──▶ D ──▶ E ──▶ F ──▶ G
+  ▲
+  we are here — setup done, nothing built yet
+```
+
+| Date | Milestone | Who | State |
+|---|---|---|---|
+| 2026-08-17 | Round 1 codebase frozen — 9 commits, last commit | Sagar | `done` |
+| 2026-08-21 | Handover pack assembled | Priyansh | `done` |
+| 2026-08-23 | Prototype repo created; full Round 1 archive committed | Priyansh | `done` |
+| 2026-08-23 | Parameter contract locked — 51 bottleneck + 37 defect fields | Priyansh | `done` |
+| 2026-08-23 | `PROGRESS.md` live; both suggestion folders filed (12 + 5 proposals) | Both | `done` |
+| 2026-08-23 | Timeline added; updating this file made a standing rule | Priyansh | `done` |
+| _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
+| _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
+| _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
+| _tbd_ | **D** — 40 stations + transfer tests | Priyansh | `todo` |
+| _tbd_ | **E** — Three stakeholder views | Both | `todo` |
+| _tbd_ | **F** — Genealogy + stop-or-continue | Both | `todo` |
+| _tbd_ | **G** — Business case + deck | Both | `todo` |
+| _tbd_ | **Submission** — proposal, prototype, pitch | Both | `todo` |
+
+Move the `▲` marker as workstreams complete. Fill the `_tbd_` dates once the deadline is set.
 
 ---
 
@@ -35,8 +72,9 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
-| 2026-08-23 | Sagar | Added `suggestion_by_sagar/` — 5 proposals: cite Turning Point Method (blocked/starved signature is prior art), add IoU as a second scoring axis, ARIMA-forecast spike as a candidate for B after its gate is green, ISO 22400 vocabulary for the leadership view, closed the old prototype-placeholder note | — |
-| 2026-08-23 | Priyansh | Added `suggestion_by_priyansh/` — proposals for Sagar to review. Sagar's equivalent folder to follow. | — |
+| 2026-08-23 | Priyansh | Added the **Timeline** section and made it a standing rule that every piece of work updates this file in the same commit. | — |
+| 2026-08-23 | Sagar | Added `suggestion_by_sagar/` — 5 proposals: cite Turning Point Method (blocked/starved signature is prior art), add IoU as a second scoring axis, ARIMA-forecast spike as a candidate for B after its gate is green, ISO 22400 vocabulary for the leadership view, closed the old prototype-placeholder note | `fdf5f7c` |
+| 2026-08-23 | Priyansh | Added `suggestion_by_priyansh/` — 12 proposals for Sagar to review, with a response table. Sagar's equivalent folder to follow. | `8e747e2` |
 | 2026-08-23 | Priyansh | Committed the full Round 1 archive. **Repo is now the single source of truth**; the Desktop handover folder is a copy. | `d843ba8` |
 | 2026-08-23 | Priyansh | Added `DigitalTwin_Model_Parameters.pdf` — 51 bottleneck + 37 defect parameters with explanations. Agree changes to it before coding against it. | `d843ba8` |
 | 2026-08-23 | Priyansh | Created this file. | `f7a4860` |
