@@ -15,11 +15,11 @@
 
 ## Right now
 
-_Last updated: 2026-08-23 by **Priyansh**_
+_Last updated: 2026-08-23 by **Sagar**_
 
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
-| **Sagar** | not started — **B (the loop)** is yours, nothing blocks it | — | — | — |
+| **Sagar** | reviewed repo + Priyansh's audit; filed `suggestion_by_sagar/`; **B (the loop)** not yet started | — | — | — |
 | **Priyansh** | repo seeded; next is **A (clear the ground)** | `main` | — | — |
 
 **Next joint checkpoint:** _(set a date)_
@@ -35,6 +35,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-23 | Sagar | Added `suggestion_by_sagar/` — 5 proposals: cite Turning Point Method (blocked/starved signature is prior art), add IoU as a second scoring axis, ARIMA-forecast spike as a candidate for B after its gate is green, ISO 22400 vocabulary for the leadership view, closed the old prototype-placeholder note | — |
 | 2026-08-23 | Priyansh | Added `suggestion_by_priyansh/` — proposals for Sagar to review. Sagar's equivalent folder to follow. | — |
 | 2026-08-23 | Priyansh | Committed the full Round 1 archive. **Repo is now the single source of truth**; the Desktop handover folder is a copy. | `d843ba8` |
 | 2026-08-23 | Priyansh | Added `DigitalTwin_Model_Parameters.pdf` — 51 bottleneck + 37 defect parameters with explanations. Agree changes to it before coding against it. | `d843ba8` |
