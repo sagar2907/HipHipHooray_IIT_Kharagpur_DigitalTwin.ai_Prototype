@@ -1,0 +1,83 @@
+DigitalTwin.ai — Project Handover
+Accenture Innovation Challenge 2026 · Problem Statement 4
+Team HipHipHooray — Sagar Sahu, Priyansh Goyal
+
+===============================================================
+READ THESE TWO FIRST
+===============================================================
+  1_Guide/DigitalTwin_Project_Guide.pdf   (4 pp)
+      What the project is, how the three pipelines work, what is
+      built vs designed vs failed, known problems, and the rules
+      we earned by catching our own mistakes.
+
+  2_Plan/DigitalTwin_Round2_Plan.pdf      (4 pp)
+      What Round 2 requires, a gap analysis against what we hold,
+      an 8-phase build order with gate checks, risks, and a
+      suggested split of work between the two of us.
+
+===============================================================
+FOLDER CONTENTS
+===============================================================
+  1_Guide/              The guide above.
+  2_Plan/               The Round 2 plan above.
+
+  3_Round1_Submission/  What we actually submitted:
+                        - HipHipHooray_DigitalTwin.ai.pptx (deck,
+                          video embedded)
+                        - HipHipHooray_DigitalTwin.ai.pdf
+                        - DigitalTwin_Pitch_Video_2m53s.mp4
+
+  4_Design_Documents/   - DigitalTwin_Three_Pipelines.pdf (21 pp)
+                          The full design. THIS IS THE SOURCE OF
+                          TRUTH, not the repo README.
+                        - DigitalTwin_Evidence_File.pdf (6 pp)
+                          Every claim with its provenance.
+                        - Round2_Problem_Statements.pdf
+                          The official Round 2 brief.
+
+  5_Animation_Sources/  Four self-contained HTML animations — just
+                        open in Chrome, no server or install:
+                        - DigitalTwin_Animation.html (plain)
+                        - ..._Captioned.html (subtitles burned in)
+                        - ..._Teleprompter.html (animation + script)
+                        - DigitalTwin_Teleprompter.html (script only)
+                        Plus the silent captioned MP4 (use this if
+                        we ever re-record narration) and the result
+                        figures.
+
+  6_Code/               digitaltwin_code_snapshot.zip — the full
+                        codebase, taken from the committed tree.
+                        Live version:
+                        https://github.com/sagar2907/HipHipHooray_DigitalTwin.ai
+
+  7_Prototype/          Round 2 prototype work.
+
+===============================================================
+GETTING RUNNING
+===============================================================
+  git clone https://github.com/sagar2907/HipHipHooray_DigitalTwin.ai.git
+  cd HipHipHooray_DigitalTwin.ai
+  pip install numpy pandas matplotlib pytest
+  python -m pytest tests/ -q
+
+  Expect 10 passed, 1 failed. The failure is known and diagnosed
+  in the guide (§5). It does NOT affect any published number.
+
+===============================================================
+IMPORTANT — THE DATASETS ARE NOT IN THE REPO
+===============================================================
+  ~765 MB of generated data is deliberately gitignored. The
+  generators are what is versioned, and they take fixed seeds, so
+  everything reproduces bit-for-bit. Regenerate with the builders
+  in scripts/. Budget a couple of hours for the full v5 truth
+  build.
+
+===============================================================
+THE ONE THING TO UNDERSTAND
+===============================================================
+  Everything we have today is BATCH — scripts that read a finished
+  dataset and print a score. That is a digital shadow, not a twin.
+  Closing the loop so it ingests, detects, ranks and re-reads on a
+  timer is the whole difference, and it is the claim a Round 2
+  judge will probe hardest. It is Phase 3 in the plan, and the
+  plan says: if time runs short, cut anything else first.

@@ -1,0 +1,15 @@
+Round 2 prototype work belongs in this folder.
+
+This folder is currently empty because no prototype files could be
+found on this machine when the handover was assembled:
+
+  - no files modified in Desktop/DigitalTwin.ai in the last 3 days
+  - git status clean, 9 commits, last commit 2026-08-17
+  - no new prototype folder anywhere on the Desktop or in Documents
+
+If prototype work exists somewhere else (another drive, another
+folder, a different repo, or not yet committed), copy it in here —
+or say where it is and it can be added.
+
+Until then, Phase 0 of 2_Plan/DigitalTwin_Round2_Plan.pdf is the
+correct place to start.

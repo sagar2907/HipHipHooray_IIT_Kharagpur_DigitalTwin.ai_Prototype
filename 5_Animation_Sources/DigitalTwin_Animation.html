@@ -1,0 +1,585 @@
+<title>DigitalTwin.ai Animation</title>
+<style>
+  :root{
+    --bg:#0b0d12; --ink:#e9ebf0; --muted:#98a0b2;
+    --purple:#b98cff; --purple2:#d6bcff; --lav:#241c3a;
+    --work-f:#2b1418; --work-s:#ff6f61;
+    --blok-f:#2c2412; --blok-s:#ffc247;
+    --strv-f:#191d24; --strv-s:#6d7b8c;
+    --fast-f:#0f2418; --fast-s:#4ade80;
+    --dark-f:#141720; --dark-s:#5a6577;
+    --idle-f:#12151c; --idle-s:#2b313d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#05060a;color:#eee;
+       font-family:Arial,Helvetica,sans-serif;display:flex;
+       flex-direction:column;align-items:center;gap:14px;padding:16px}
+  #stage{width:min(96vw,1600px);aspect-ratio:16/9;background:var(--bg);
+         border-radius:6px;overflow:hidden;box-shadow:0 8px 44px #000}
+  svg{display:block;width:100%;height:100%}
+  .noanim *{transition:none!important;animation:none!important}
+  .st-rect{transition:fill .45s ease,stroke .45s ease}
+  .st-state{transition:fill .45s ease}
+  .fade{opacity:0;transition:opacity .5s ease}
+  .fade.on{opacity:1}
+
+  #bar{width:min(96vw,1600px);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button{background:#6d28d9;color:#fff;border:0;padding:9px 16px;border-radius:5px;
+         font:bold 13px Arial;cursor:pointer}
+  button:hover{background:#7c3aed}
+  button.ghost{background:#242833}
+  #clock{font:bold 16px Consolas,monospace;color:#fff;min-width:112px}
+  #scenelabel{font:bold 13px Arial;color:var(--purple2)}
+  #tele{width:min(96vw,1600px);background:#0e1016;border-radius:6px;padding:16px 20px;
+        font:500 20px/1.5 Arial;color:#fff;min-height:96px;border-left:5px solid #6d28d9}
+  #tele b{color:var(--purple2);font:bold 12px Arial;display:block;margin-bottom:6px;
+          letter-spacing:.08em}
+  .hint{font:12px Arial;color:#7b8296}
+</style>
+
+<div id="stage"><svg id="cv" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"></svg></div>
+
+<div id="bar">
+  <button id="play">▶ Play</button>
+  <button id="restart" class="ghost">⟲ Restart</button>
+  <button id="prev" class="ghost">◀ Scene</button>
+  <button id="next" class="ghost">Scene ▶</button>
+  <span id="clock">0:00 / 2:50</span>
+  <span id="scenelabel"></span>
+  <button id="teleBtn" class="ghost">Hide script</button>
+  <span class="hint">Space play/pause · R restart · ← → scenes · F fullscreen</span>
+</div>
+
+<div id="tele"><b>VOICEOVER</b><span id="votext">Press Play. Record only the stage area above.</span></div>
+
+<script>
+const NS="http://www.w3.org/2000/svg", cv=document.getElementById("cv");
+function E(t,a={},p=cv){const n=document.createElementNS(NS,t);
+  for(const k in a)n.setAttribute(k,a[k]);p.appendChild(n);return n;}
+function T(x,y,s,{size=26,weight="bold",fill="var(--ink)",anchor="middle",parent=cv}={}){
+  const t=E("text",{x,y,"text-anchor":anchor,"font-size":size,"font-weight":weight,fill,
+    "font-family":"Arial,Helvetica,sans-serif"},parent);t.textContent=s;return t;}
+
+const STATES={
+  IDLE:{f:"var(--idle-f)",s:"var(--idle-s)",t:"#6a7285",l:""},
+  WORKING:{f:"var(--work-f)",s:"var(--work-s)",t:"var(--work-s)",l:"WORKING"},
+  BLOCKED:{f:"var(--blok-f)",s:"var(--blok-s)",t:"var(--blok-s)",l:"BLOCKED"},
+  STARVED:{f:"var(--strv-f)",s:"var(--strv-s)",t:"#8b9aad",l:"STARVED"},
+  FAST:{f:"var(--fast-f)",s:"var(--fast-s)",t:"var(--fast-s)",l:"WORKING"},
+  DARK:{f:"var(--dark-f)",s:"var(--dark-s)",t:"#8791a3",l:"DARK · no sensor"}
+};
+let gBG,gLine,gGraph,gHealth,gLoop,gTitle,gEnd,gBadge,gSteps,stations,cars,carTimer=null,graphIv=null;
+const SX=90,SW=250,SGAP=52,SY=395,SH=140;
+const stx=i=>SX+i*(SW+SGAP);
+function clearAll(){while(cv.firstChild)cv.removeChild(cv.firstChild);}
+
+/* ---------- line ---------- */
+function buildLine(){
+  gLine=E("g",{});stations=[];
+  const defs=E("defs",{},gLine);
+  const m=E("marker",{id:"ah",viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:6,
+    markerHeight:6,orient:"auto-start-reverse"},defs);
+  E("path",{d:"M0 0 L10 5 L0 10 z",fill:"#5b6577"},m);
+  for(let i=0;i<5;i++){
+    const g=E("g",{},gLine),x=stx(i),bufs=[];
+    for(let b=0;b<4;b++){
+      const r=E("rect",{x:x+20,y:SY-48-b*26,width:126,height:19,rx:3,
+        fill:"var(--blok-f)",stroke:"var(--blok-s)","stroke-width":2.5},g);
+      r.setAttribute("class","fade");bufs.push(r);
+    }
+    const rect=E("rect",{x,y:SY,width:SW,height:SH,rx:10,fill:STATES.IDLE.f,
+      stroke:STATES.IDLE.s,"stroke-width":4},g);
+    rect.setAttribute("class","st-rect");
+    const name=T(x+SW/2,SY+45,"Station "+(i+1),{size:28,parent:g});
+    const time=T(x+SW/2,SY+82,"60 s",{size:24,weight:"normal",fill:"#8c94a6",parent:g});
+    const state=T(x+SW/2,SY+119,"",{size:20,fill:"#6a7285",parent:g});
+    state.setAttribute("class","st-state");
+    if(i<4)E("path",{d:`M${x+SW+8} ${SY+SH/2} L${x+SW+SGAP-14} ${SY+SH/2}`,
+      stroke:"#5b6577","stroke-width":4,fill:"none","marker-end":"url(#ah)"},gLine);
+    stations.push({g,rect,name,time,state,bufs,x});
+  }
+  cars=E("g",{},gLine);
+}
+function setState(i,st){const s=stations[i],S=STATES[st];
+  s.rect.setAttribute("fill",S.f);s.rect.setAttribute("stroke",S.s);
+  s.rect.setAttribute("stroke-dasharray",st==="DARK"?"10 7":"none");
+  s.state.textContent=S.l;s.state.setAttribute("fill",S.t);}
+function setTime(i,t,c){stations[i].time.textContent=t;if(c)stations[i].time.setAttribute("fill",c);}
+function setBuf(i,n){stations[i].bufs.forEach((b,k)=>b.classList.toggle("on",k<n));}
+function hideAllBufs(){stations.forEach((_,i)=>setBuf(i,0));}
+function startCars(sp=1){
+  stopCars();const dots=[];
+  for(let k=0;k<9;k++){
+    const p=k/9, x=SX+p*(stx(4)+SW-SX);
+    let ins=false;for(let i=0;i<5;i++)if(x>stx(i)-6&&x<stx(i)+SW+6){ins=true;break;}
+    // position at creation: on seek() the interval has not run yet, and
+    // unpositioned circles would flash at the canvas origin
+    dots.push({el:E("circle",{r:9,cx:x,cy:SY+SH/2,opacity:ins?0:.85,
+      fill:"var(--purple)"},cars),p});
+  }
+  let last=performance.now();
+  carTimer=setInterval(()=>{const now=performance.now(),dt=(now-last)/1000;last=now;
+    dots.forEach(d=>{d.p=(d.p+dt*0.055*sp)%1;
+      const x=SX+d.p*(stx(4)+SW-SX);
+      d.el.setAttribute("cx",x);d.el.setAttribute("cy",SY+SH/2);
+      let ins=false;for(let i=0;i<5;i++)if(x>stx(i)-6&&x<stx(i)+SW+6){ins=true;break;}
+      d.el.setAttribute("opacity",ins?0:.85);});},30);
+}
+function stopCars(){if(carTimer){clearInterval(carTimer);carTimer=null;}
+  if(cars)while(cars.firstChild)cars.removeChild(cars.firstChild);}
+
+/* ---------- badge + steps ---------- */
+function badge(kind,txt){
+  while(gBadge.firstChild)gBadge.removeChild(gBadge.firstChild);
+  const isP=kind==="PROBLEM";
+  const col=isP?"var(--work-s)":"var(--fast-s)";
+  E("rect",{x:60,y:52,width:isP?196:236,height:44,rx:22,fill:"none",stroke:col,
+    "stroke-width":3},gBadge);
+  T(60+(isP?98:118),82,isP?"PROBLEM":"OUR SOLUTION",{size:20,fill:col,parent:gBadge});
+  T(60+(isP?216:256),82,txt,{size:27,fill:"var(--ink)",anchor:"start",parent:gBadge});
+  gBadge.classList.add("on");
+}
+function hideBadge(){gBadge.classList.remove("on");}
+function showSteps(items){
+  while(gSteps.firstChild)gSteps.removeChild(gSteps.firstChild);
+  const n=items.length,w=352,gap=16,total=n*w+(n-1)*gap,x0=(1600-total)/2,y=724;
+  items.forEach((lines,i)=>{
+    const g=E("g",{},gSteps);g.setAttribute("class","fade");
+    const x=x0+i*(w+gap);
+    E("rect",{x,y,width:w,height:118,rx:9,fill:"var(--lav)",stroke:"#3b3157","stroke-width":2},g);
+    E("circle",{cx:x+30,cy:y+30,r:15,fill:"var(--purple)"},g);
+    T(x+30,y+37,String(i+1),{size:16,fill:"#14101f",parent:g});
+    lines.forEach((ln,k)=>T(x+56,y+36+k*24,ln,{size:16,weight:"normal",
+      fill:"var(--ink)",anchor:"start",parent:g}));
+    setTimeout(()=>g.classList.add("on"),i*260);
+  });
+  gSteps.classList.add("on");
+}
+function hideSteps(){gSteps.classList.remove("on");}
+function callout(txt,col,y){
+  const g=E("g",{},gLine);g.setAttribute("class","fade");
+  const w=Math.min(1120,txt.length*19+70),x=800-w/2;
+  E("rect",{x,y,width:w,height:66,rx:8,fill:"var(--bg)",stroke:col,"stroke-width":4},g);
+  T(800,y+44,txt,{size:28,fill:col,parent:g});
+  requestAnimationFrame(()=>g.classList.add("on"));return g;
+}
+function counter(x,y,label){
+  const g=E("g",{},gLine);g.setAttribute("class","fade");
+  const num=T(x,y,"0",{size:72,fill:"var(--purple)",parent:g});
+  T(x,y+36,label,{size:20,weight:"normal",fill:"var(--muted)",parent:g});
+  requestAnimationFrame(()=>g.classList.add("on"));return{g,num};
+}
+function countTo(el,to,dur=1400){const t0=performance.now();
+  (function s(n){const k=Math.min(1,(n-t0)/dur);el.textContent=Math.round(k*to);
+    if(k<1)requestAnimationFrame(s);})(t0);}
+
+/* ---------- scene: drift graph ---------- */
+function buildGraph(){
+  gGraph=E("g",{});gGraph.setAttribute("class","fade");
+  const X=200,Y=210,W=1200,H=300;
+  E("rect",{x:X,y:Y,width:W,height:H,rx:8,fill:"#0f1219",stroke:"#2c3242","stroke-width":3},gGraph);
+  E("rect",{x:X,y:Y+82,width:W,height:104,fill:"#132a1c"},gGraph);
+  T(X+14,Y+72,"healthy baseline band",{size:18,weight:"normal",fill:"var(--fast-s)",
+    anchor:"start",parent:gGraph});
+  gGraph.reading=E("path",{d:"",stroke:"#7ea8ff","stroke-width":3.5,fill:"none"},gGraph);
+  gGraph.truth=E("path",{d:"",stroke:"var(--work-s)","stroke-width":3.5,fill:"none",
+    "stroke-dasharray":"9 6",opacity:0},gGraph);
+  T(X+W-14,Y+28,"torque READING — what the controller sees",{size:18,fill:"#7ea8ff",
+    anchor:"end",parent:gGraph});
+  gGraph.truthLbl=T(X+14,Y+H-16,"TRUE clamp force — what the joint actually gets",
+    {size:18,fill:"var(--work-s)",anchor:"start",parent:gGraph});
+  gGraph.truthLbl.setAttribute("opacity",0);
+  gGraph.box={X,Y,W,H};return gGraph;
+}
+function animGraph(drift){
+  if(graphIv){clearInterval(graphIv);graphIv=null;}
+  let p=0;graphIv=setInterval(()=>{p+=.05;drawGraph(Math.min(p,1),drift);
+    if(p>=1){clearInterval(graphIv);graphIv=null;}},40);
+}
+function drawGraph(prog,drift){
+  const{X,Y,W,H}=gGraph.box,mid=Y+134;let a="",b="";
+  for(let i=0;i<=Math.floor(prog*160);i++){
+    const x=X+(i/160)*W,nz=Math.sin(i*1.7)*12+Math.cos(i*.9)*8;
+    a+=(i?"L":"M")+x+" "+(mid+nz);
+    const d=drift?Math.max(0,(i-45)/115)*150:0;
+    b+=(i?"L":"M")+x+" "+(mid+nz*.8+d);
+  }
+  gGraph.reading.setAttribute("d",a);gGraph.truth.setAttribute("d",b);
+}
+
+/* ---------- scene: health score ---------- */
+function buildHealth(){
+  gHealth=E("g",{});gHealth.setAttribute("class","fade");
+  const X=200,Y=195,W=1200,H=440;
+  E("rect",{x:X,y:Y,width:W,height:H,rx:8,fill:"#0f1219",stroke:"#2c3242","stroke-width":3},gHealth);
+  // three sparklines feeding one score
+  ["torque","current","cycle time"].forEach((nm,k)=>{
+    const yy=Y+82+k*78;
+    T(X+26,yy+6,nm,{size:18,weight:"normal",fill:"var(--muted)",anchor:"start",parent:gHealth});
+    let d="";for(let i=0;i<70;i++)d+=(i?"L":"M")+(X+150+i*3.1)+" "+(yy+Math.sin(i*1.3+k)*9);
+    E("path",{d,stroke:"#7ea8ff","stroke-width":2,fill:"none",opacity:.75},gHealth);
+  });
+  E("path",{d:`M${X+400} ${Y+160} L${X+470} ${Y+160}`,stroke:"var(--purple)",
+    "stroke-width":4,"marker-end":"url(#ah)",fill:"none"},gHealth);
+  T(X+435,Y+140,"combined",{size:16,weight:"normal",fill:"var(--purple)",parent:gHealth});
+  // health score curve
+  const gx=X+500,gw=650,gy=Y+70,gh=300;
+  E("rect",{x:gx,y:gy,width:gw,height:gh,rx:6,fill:"#0b0e14",stroke:"#2c3242","stroke-width":2},gHealth);
+  E("line",{x1:gx,y1:gy+195,x2:gx+gw,y2:gy+195,stroke:"var(--blok-s)",
+    "stroke-width":2,"stroke-dasharray":"7 6"},gHealth);
+  T(gx+8,gy+188,"alert threshold",{size:16,weight:"normal",fill:"var(--blok-s)",
+    anchor:"start",parent:gHealth});
+  let hd="";for(let i=0;i<=100;i++){const x=gx+i/100*gw;
+    hd+=(i?"L":"M")+x+" "+(gy+42+Math.max(0,(i-30)/70)*(gh-95)+Math.sin(i)*3);}
+  gHealth.curve=E("path",{d:hd,stroke:"var(--fast-s)","stroke-width":4,fill:"none",
+    "stroke-dasharray":2000,"stroke-dashoffset":2000},gHealth);
+  gHealth.warn=E("g",{},gHealth);gHealth.warn.setAttribute("class","fade");
+  E("line",{x1:gx+gw*.63,y1:gy,x2:gx+gw*.63,y2:gy+gh,stroke:"var(--purple)","stroke-width":3},gHealth.warn);
+  T(gx+gw*.63,gy-12,"we warn here",{size:17,fill:"var(--purple)",parent:gHealth.warn});
+  gHealth.scrap=E("g",{},gHealth);gHealth.scrap.setAttribute("class","fade");
+  E("line",{x1:gx+gw*.97,y1:gy,x2:gx+gw*.97,y2:gy+gh,stroke:"var(--work-s)","stroke-width":3},gHealth.scrap);
+  T(gx+gw*.97,gy-12,"scrap begins",{size:17,fill:"var(--work-s)",anchor:"end",parent:gHealth.scrap});
+  gHealth.gap=E("g",{},gHealth);gHealth.gap.setAttribute("class","fade");
+  E("path",{d:`M${gx+gw*.63} ${gy+gh+26} L${gx+gw*.97} ${gy+gh+26}`,stroke:"var(--purple)",
+    "stroke-width":3,"marker-end":"url(#ah)",fill:"none"},gHealth.gap);
+  T(gx+gw*.80,gy+gh+52,"421–1,322 vehicles of warning",{size:20,fill:"var(--purple)",parent:gHealth.gap});
+  return gHealth;
+}
+
+/* ---------- scene: loop ---------- */
+function buildLoop(){
+  gLoop=E("g",{});gLoop.setAttribute("class","fade");
+  const defs=E("defs",{},gLoop);
+  const m=E("marker",{id:"ah2",viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:5,
+    markerHeight:5,orient:"auto-start-reverse"},defs);
+  E("path",{d:"M0 0 L10 5 L0 10 z",fill:"var(--purple)"},m);
+  const items=[["Line","scans · states · torque"],["Event spine","one clock"],
+    ["Twin","replay + counterfactual"],["Ranked call","cars gained, not % busy"],
+    ["Supervisor","confirms or overrides"]];
+  const w=272,gap=26,total=items.length*w+(items.length-1)*gap,x0=(1600-total)/2,y=300;
+  items.forEach((it,i)=>{
+    const g=E("g",{},gLoop);g.setAttribute("class","fade");
+    const hero=i===2,sup=i===4,X=x0+i*(w+gap);
+    E("rect",{x:X,y,width:w,height:130,rx:9,fill:hero?"#4c1d95":(sup?"#0f2418":"#12151c"),
+      stroke:hero?"var(--purple)":(sup?"var(--fast-s)":"#333a49"),"stroke-width":3},g);
+    T(X+w/2,y+56,it[0],{size:26,fill:hero?"#fff":(sup?"var(--fast-s)":"var(--ink)"),parent:g});
+    T(X+w/2,y+90,it[1],{size:16,weight:"normal",fill:hero?"var(--purple2)":"var(--muted)",parent:g});
+    if(i<4)E("path",{d:`M${X+w+4} ${y+65} L${X+w+gap-6} ${y+65}`,stroke:"var(--purple)",
+      "stroke-width":5,fill:"none","marker-end":"url(#ah2)"},gLoop);
+    gLoop["n"+i]=g;
+  });
+  gLoop.ret=E("path",{d:`M${x0+total-140} ${y+150} L${x0+total-140} ${y+212} L${x0+140} ${y+212} L${x0+140} ${y+150}`,
+    stroke:"var(--purple)","stroke-width":4,fill:"none","stroke-dasharray":"11 8",
+    "marker-end":"url(#ah2)",opacity:0},gLoop);
+  gLoop.retLbl=T(800,y+246,"the twin re-reads the line and corrects its own model",
+    {size:21,fill:"var(--purple2)",parent:gLoop});gLoop.retLbl.setAttribute("opacity",0);
+  gLoop.never=E("g",{},gLoop);gLoop.never.setAttribute("class","fade");
+  E("rect",{x:410,y:632,width:780,height:66,rx:8,fill:"var(--bg)",stroke:"var(--fast-s)",
+    "stroke-width":4},gLoop.never);
+  T(800,676,"a person confirms every change — it never writes to line control",
+    {size:25,fill:"var(--fast-s)",parent:gLoop.never});
+  return gLoop;
+}
+
+/* ---------- build all ---------- */
+function buildAll(){
+  clearAll();stopCars();
+  if(graphIv){clearInterval(graphIv);graphIv=null;}
+  gBG=E("rect",{x:0,y:0,width:1600,height:900,fill:"var(--bg)"});
+  buildLine();cv.appendChild(gLine);
+  cv.appendChild(buildGraph());
+  cv.appendChild(buildHealth());
+  cv.appendChild(buildLoop());
+  gSteps=E("g",{});gSteps.setAttribute("class","fade");
+  gBadge=E("g",{});gBadge.setAttribute("class","fade");
+  gTitle=E("g",{});gTitle.setAttribute("class","fade");
+  T(800,190,"DigitalTwin.ai",{size:84,fill:"var(--purple)",parent:gTitle});
+  T(800,242,"a live twin of a vehicle assembly line",{size:28,weight:"normal",
+    fill:"var(--muted)",parent:gTitle});
+  gEnd=E("g",{});gEnd.setAttribute("class","fade");
+  T(800,380,"DigitalTwin.ai",{size:96,fill:"var(--purple)",parent:gEnd});
+  T(800,444,"see the constraint · predict the defect · estimate the unseen",
+    {size:29,weight:"normal",fill:"var(--muted)",parent:gEnd});
+  T(800,536,"Team HipHipHooray",{size:25,fill:"var(--purple2)",parent:gEnd});
+  stations.forEach((_,i)=>setState(i,"IDLE"));
+}
+function buildAllKeepScene(){
+  if(gLine&&gLine.parentNode)gLine.parentNode.removeChild(gLine);
+  stopCars();buildLine();cv.insertBefore(gLine,gBG.nextSibling);
+  gLine.classList.add("fade","on");hideAllBufs();
+}
+function showOnly(...gs){
+  [gLine,gGraph,gHealth,gLoop,gTitle,gEnd].forEach(g=>g&&g.classList.remove("on"));
+  gs.forEach(g=>g&&g.classList.add("on"));
+}
+
+/* ---------- scenes ---------- */
+const SCENES=[
+ {t:0,     name:"1 · The line",       vo:"A vehicle assembly line. Twenty stations in sequence. When one slows, the whole line feels it \u2014 and in automotive, unplanned downtime runs into millions of dollars an hour."},
+ {t:10000, name:"2 · PROBLEM 1",      vo:"Problem one. A bottleneck ripples downstream, and it will not stay put. We jammed one station, repaired it, then ran it at twice every other station's speed. One hundred and six cars either way \u2014 the queue simply moved. In our shifts the constraint changed about six times."},
+ {t:32000, name:"3 · SOLUTION 1",     vo:"Our answer: stop asking who looks busy, and read the signature. The constraint runs flat out while the station behind it blocks and the one ahead starves. We rank by processing time divided by uptime \u2014 that finds it 46 percent of the time, against 35 for utilisation ranking. And buffer fill-rates flag the next bottleneck before it forms."},
+ {t:58000, name:"4 · PROBLEM 2",      vo:"Problem two. An early defect can go uncaught for dozens of vehicles. A tool drifts out of calibration, and its own sensor drifts with it, so the reading still says pass. In our data, eleven thousand six hundred defective joints passed as OK."},
+ {t:76000, name:"5 · SOLUTION 2",     vo:"Our answer: track always-on signals \u2014 torque, current, cycle time \u2014 against each station's own healthy baseline. When the health score bends we classify why first: a worn tool needs servicing, a drifted sensor needs only recalibrating. Get that wrong and you either pass bad joints or scrap good ones. Median warning: four hundred to thirteen hundred vehicles."},
+ {t:100000,name:"6 · PROBLEM 3",      vo:"Problem three. Most real factories have stations with little or no sensor data \u2014 manual work and legacy equipment that emit nothing at all. And guessing is dangerous: treating the gap between two timestamps as real work overstates it by fifty-three percent."},
+ {t:118000,name:"7 · SOLUTION 3",     vo:"Our answer: bracket the silent station between the timestamps either side, then cross-check the neighbours \u2014 an empty upstream buffer means it was waiting, not working. For several dark stations, we locate the culprit the way seismographs locate an earthquake, from arrival delays on each side. Every estimate ships a confidence score."},
+ {t:144000,name:"8 · The loop",       vo:"All three run on one AI loop, on signals the plant already emits. The twin ranks what to do in cars gained and shows its evidence. A person confirms every change \u2014 it never writes to line control. Then it re-reads the line and corrects its model."},
+ {t:164000,name:"9 · Close",          vo:"DigitalTwin.ai. The plant already has the data. What it has been missing is a model that connects that data to cause, consequence, and the next best action."}
+];
+/* cap the runtime at 2:50 without re-timing every cue by hand */
+const SCALE=170000/176000;
+SCENES.forEach(s=>s.t=Math.round(s.t*SCALE));
+const TOTAL=170000;
+let cues=[];const cue=(t,fn)=>cues.push({t:Math.round(t*SCALE),fn,done:false});
+
+function buildCues(){
+  cues=[];
+  /* S1 */
+  cue(0,()=>{showOnly(gLine);hideBadge();hideSteps();hideAllBufs();
+    stations.forEach((_,i)=>{setState(i,"WORKING");setTime(i,"60 s","#8c94a6");});
+    startCars(1);gTitle.classList.add("on");});
+  cue(3600,()=>{
+    T(800,300,"automotive unplanned downtime runs above $2M per hour   \u00b7   "+
+      "Senseye / Siemens",{size:20,weight:"normal",fill:"var(--muted)",parent:gTitle});
+    T(800,336,"the line supervisor deciding what to fix next has minutes, not hours",
+      {size:20,weight:"normal",fill:"var(--muted)",parent:gTitle});});
+  cue(8500,()=>gTitle.classList.remove("on"));
+
+  /* S2 — PROBLEM 1 */
+  cue(10200,()=>{badge("PROBLEM","1 · the bottleneck moves");});
+  cue(11500,()=>{setTime(2,"68 s","var(--work-s)");startCars(.45);});
+  cue(13000,()=>{setBuf(2,2);});
+  cue(14500,()=>{setBuf(2,4);setBuf(1,3);setState(0,"BLOCKED");setState(1,"BLOCKED");});
+  cue(16000,()=>{setState(3,"STARVED");setState(4,"STARVED");});
+  cue(17600,()=>{setTime(2,"60 s","var(--fast-s)");setBuf(2,1);setBuf(1,0);
+    setState(0,"WORKING");setState(1,"WORKING");setState(2,"WORKING");
+    setState(3,"WORKING");setState(4,"WORKING");startCars(1);});
+  cue(19400,()=>{setBuf(2,0);setTime(2,"60 s","#8c94a6");
+    const c=counter(300,700,"cars out — repaired");countTo(c.num,106);});
+  cue(22600,()=>{setTime(2,"30 s","var(--fast-s)");setState(2,"FAST");setBuf(2,0);startCars(1);});
+  cue(23800,()=>{setBuf(3,3);setState(2,"WORKING");});
+  cue(25200,()=>{setBuf(3,4);setState(3,"WORKING");setTime(3,"60 s","var(--work-s)");
+    setState(1,"BLOCKED");setState(2,"BLOCKED");setState(4,"STARVED");});
+  cue(26800,()=>{const c=counter(1300,700,"cars out — twice as fast");countTo(c.num,106);});
+  cue(29200,()=>callout("106 = 106   ·   the queue simply moved","var(--work-s)",790));
+  cue(30600,()=>{const g=E("g",{},gLine);g.setAttribute("class","fade");
+    T(800,878,"\u201cAn hour saved at a non-bottleneck is a mirage\u201d   \u2014   "+
+      "Goldratt, Theory of Constraints, 1984",
+      {size:17,weight:"normal",fill:"var(--muted)",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+
+  /* S3 — SOLUTION 1 */
+  cue(32200,()=>{buildAllKeepScene();showOnly(gLine);hideSteps();
+    badge("SOLUTION","1 · read the signature");
+    stations.forEach((_,i)=>setState(i,"WORKING"));setTime(2,"68 s","var(--work-s)");
+    startCars(.8);});
+  cue(34200,()=>{setState(0,"BLOCKED");setState(1,"BLOCKED");setBuf(1,3);setBuf(2,4);});
+  cue(35800,()=>{setState(3,"STARVED");setState(4,"STARVED");});
+  cue(37600,()=>{
+    const g=E("g",{},gLine);g.setAttribute("class","fade");
+    E("path",{d:`M${stx(0)+120} ${SY+SH+12} L${stx(2)+70} ${SY+SH+56}`,stroke:"var(--blok-s)",
+      "stroke-width":5,fill:"none","marker-end":"url(#ah)"},g);
+    E("path",{d:`M${stx(4)+120} ${SY+SH+12} L${stx(2)+180} ${SY+SH+56}`,stroke:"var(--strv-s)",
+      "stroke-width":5,fill:"none","marker-end":"url(#ah)"},g);
+    T(stx(0)+40,SY+SH+84,"blocking points forward",{size:19,fill:"var(--blok-s)",
+      anchor:"start",parent:g});
+    T(stx(4)+210,SY+SH+84,"starving points backward",{size:19,fill:"var(--strv-s)",
+      anchor:"end",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+  cue(40000,()=>callout("the constraint — never blocked, never starved","var(--work-s)",638));
+  cue(43500,()=>{
+    const g=E("g",{},gLine);g.setAttribute("class","fade");
+    const x=stx(3)+SW/2;
+    E("circle",{cx:x,cy:SY-236,r:42,fill:"var(--bg)",stroke:"var(--purple)","stroke-width":6},g);
+    T(x,SY-226,"8:12",{size:25,fill:"var(--purple)",parent:g});
+    T(x,SY-176,"filling — projected block",{size:19,weight:"normal",fill:"var(--purple2)",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));setBuf(3,2);});
+  cue(46000,()=>setBuf(3,4));
+  cue(52500,()=>{const g=E("g",{},gLine);g.setAttribute("class","fade");
+    T(800,872,"46% / 58% top-1 / top-2   vs   35% / 48% for utilisation ranking"+
+      "   \u00b7   958 scored line-blocks",
+      {size:17,weight:"normal",fill:"var(--purple2)",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+  cue(48000,()=>showSteps([
+    ["state per station:","measured, or estimated","where no tag exists"],
+    ["the blocked / starved","signature locates it —","not raw busyness"],
+    ["rank by processing time","÷ uptime, then pull that","station's full history"],
+    ["buffer fill-rates flag the","next constraint BEFORE","it forms — 60% hit rate"]]));
+
+  /* S4 — PROBLEM 2 */
+  cue(58200,()=>{stopCars();showOnly(gGraph);hideSteps();drawGraph(0,false);
+    badge("PROBLEM","2 · the defect nobody sees");});
+  cue(59000,()=>animGraph(false));
+  cue(63000,()=>{gGraph.truth.setAttribute("opacity",1);
+    gGraph.truthLbl.setAttribute("opacity",1);animGraph(true);});
+  cue(68000,()=>{
+    const g=E("g",{},gGraph);g.setAttribute("class","fade");
+    E("rect",{x:470,y:600,width:660,height:96,rx:8,fill:"var(--bg)",stroke:"var(--work-s)",
+      "stroke-width":4},g);
+    T(800,638,"the reading still says PASS",{size:27,fill:"var(--work-s)",parent:g});
+    T(800,674,"11,631 of 11,826 defective joints passed as OK",{size:22,weight:"normal",
+      fill:"var(--ink)",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+
+  /* S5 — SOLUTION 2 */
+  cue(76200,()=>{showOnly(gHealth);hideSteps();badge("SOLUTION","2 · watch the health score");
+    gHealth.curve.setAttribute("stroke-dashoffset",2000);
+    gHealth.warn.classList.remove("on");gHealth.scrap.classList.remove("on");
+    gHealth.gap.classList.remove("on");});
+  cue(77200,()=>{gHealth.curve.style.transition="stroke-dashoffset 3.4s linear";
+    gHealth.curve.setAttribute("stroke-dashoffset",0);});
+  cue(81500,()=>gHealth.warn.classList.add("on"));
+  cue(84000,()=>gHealth.scrap.classList.add("on"));
+  cue(86000,()=>gHealth.gap.classList.add("on"));
+  cue(88500,()=>showSteps([
+    ["track torque, current,","cycle time — always on,","near-zero compute"],
+    ["one health score vs","that station's OWN","healthy baseline"],
+    ["classify WHY: worn tool","→ service; drifted sensor","→ recalibrate only"],
+    ["get it wrong: pass 11,631","bad joints — or scrap","700–960 good ones"]]));
+
+  /* S6 — PROBLEM 3 */
+  cue(100200,()=>{buildAllKeepScene();showOnly(gLine);hideSteps();stopCars();
+    badge("PROBLEM","3 · stations that cannot be seen");
+    stations.forEach((_,i)=>setState(i,"WORKING"));
+    setState(2,"DARK");setTime(2,"?","var(--dark-s)");});
+  cue(103000,()=>{
+    const g=E("g",{},gLine);g.setAttribute("class","fade");
+    E("rect",{x:410,y:640,width:780,height:96,rx:8,fill:"var(--bg)",stroke:"var(--work-s)",
+      "stroke-width":4},g);
+    T(800,678,"naive bracket = 88.8 s",{size:27,fill:"var(--work-s)",parent:g});
+    T(800,714,"overstates real work by 53% — it counts the neighbours' waiting too",
+      {size:21,weight:"normal",fill:"var(--ink)",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+
+  /* S7 — SOLUTION 3 */
+  cue(118200,()=>{buildAllKeepScene();showOnly(gLine);hideSteps();
+    badge("SOLUTION","3 · bracket, then correct");
+    stations.forEach((_,i)=>setState(i,"WORKING"));
+    setState(2,"DARK");setTime(2,"?","var(--dark-s)");});
+  cue(120000,()=>{
+    const g=E("g",{},gLine);g.setAttribute("class","fade");
+    [1,3].forEach(i=>{
+      E("rect",{x:stx(i)+55,y:SY-96,width:140,height:46,rx:6,fill:"var(--bg)",
+        stroke:"var(--purple)","stroke-width":3},g);
+      T(stx(i)+125,SY-64,i===1?"t = 0.0 s":"t = 88.8 s",{size:19,fill:"var(--purple)",parent:g});
+      E("path",{d:`M${stx(i)+125} ${SY-44} L${stx(i)+125} ${SY-14}`,stroke:"var(--purple)",
+        "stroke-width":3},g);});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+  cue(123000,()=>{setState(1,"BLOCKED");setBuf(1,0);
+    const g=E("g",{},gLine);g.setAttribute("class","fade");
+    T(800,SY+SH+38,"upstream buffer empty → it was WAITING, not working",
+      {size:22,fill:"var(--blok-s)",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+  cue(126500,()=>{const cx=stx(2)+SW/2,cy=SY+SH/2;
+    for(let k=0;k<3;k++)setTimeout(()=>{
+      const c=E("circle",{cx,cy,r:20,fill:"none",stroke:"var(--purple)","stroke-width":4,
+        opacity:.9},gLine);
+      const a=E("animate",{attributeName:"r",from:20,to:520,dur:"2.2s",fill:"freeze"},c);
+      const o=E("animate",{attributeName:"opacity",from:.9,to:0,dur:"2.2s",fill:"freeze"},c);
+      a.beginElement&&a.beginElement();o.beginElement&&o.beginElement();},k*650);});
+  cue(130000,()=>{
+    const g=E("g",{},gLine);g.setAttribute("class","fade");
+    E("rect",{x:300,y:598,width:460,height:88,rx:8,fill:"var(--bg)",stroke:"var(--work-s)",
+      "stroke-width":3},g);
+    T(530,632,"88.8 s",{size:35,fill:"var(--work-s)",parent:g});
+    T(530,666,"raw bracket",{size:19,weight:"normal",fill:"var(--muted)",parent:g});
+    E("rect",{x:840,y:598,width:460,height:88,rx:8,fill:"var(--bg)",stroke:"var(--fast-s)",
+      "stroke-width":3},g);
+    T(1070,632,"58.0 s",{size:35,fill:"var(--fast-s)",parent:g});
+    T(1070,666,"corrected · inferred, confidence 0.81",{size:19,weight:"normal",
+      fill:"var(--muted)",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+  cue(133500,()=>showSteps([
+    ["bracket between the two","timestamps we DO have"],
+    ["subtract an estimated","transit-time distribution,","never a fixed number"],
+    ["several dark in a row?","locate it like an","earthquake epicentre"],
+    ["every estimate ships","with a confidence score"]]));
+
+  /* S8 — loop */
+  cue(144200,()=>{stopCars();showOnly(gLoop);hideSteps();hideBadge();
+    [0,1,2,3,4].forEach((i,k)=>setTimeout(()=>gLoop["n"+i].classList.add("on"),k*380));});
+  cue(150000,()=>{
+    const g=E("g",{},gLoop);g.setAttribute("class","fade");
+    E("rect",{x:1080,y:120,width:430,height:150,rx:8,fill:"#12151c",stroke:"var(--purple)",
+      "stroke-width":3},g);
+    T(1295,154,"ranked recommendation",{size:19,fill:"var(--purple2)",parent:g});
+    T(1295,192,"1 · reduce release rate",{size:20,weight:"normal",fill:"var(--ink)",parent:g});
+    T(1295,224,"2 · move operator to S3",{size:20,weight:"normal",fill:"var(--ink)",parent:g});
+    T(1295,256,"confidence 0.81 · evidence shown",{size:17,weight:"normal",
+      fill:"var(--purple)",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+  cue(155000,()=>gLoop.never.classList.add("on"));
+  cue(158500,()=>{gLoop.ret.setAttribute("opacity",1);gLoop.retLbl.setAttribute("opacity",1);});
+  cue(160200,()=>{
+    const g=E("g",{},gLoop);g.setAttribute("class","fade");
+    E("rect",{x:60,y:726,width:1480,height:126,rx:9,fill:"var(--lav)",
+      stroke:"#3b3157","stroke-width":2},g);
+    const rows=[["BUILT & MEASURED","var(--purple)",
+        "three detection pipelines  \u00b7  20-station plant simulator  \u00b7  162 runs  "+
+        "\u00b7  held-out calibration"],
+      ["DESIGNED, NOT YET BUILT","var(--muted)",
+        "genealogy containment  \u00b7  failure-mode classifier"],
+      ["TESTED AND FAILED","var(--work-s)",
+        "drift-based overtake risk: 70\u2013100% stated confidence, 5.9% actual "+
+        "\u2014 we report it rather than hide it"]];
+    rows.forEach((r,i)=>{
+      const y=766+i*34;
+      T(90,y,r[0],{size:16,fill:r[1],anchor:"start",parent:g});
+      T(400,y,r[2],{size:16,weight:"normal",fill:"var(--ink)",anchor:"start",parent:g});
+    });
+    requestAnimationFrame(()=>g.classList.add("on"));});
+
+  /* S9 */
+  cue(164200,()=>{showOnly(gEnd);hideBadge();hideSteps();});
+  cue(166600,()=>{
+    const g=E("g",{},gEnd);g.setAttribute("class","fade");
+    E("rect",{x:210,y:634,width:1180,height:112,rx:9,fill:"var(--lav)",
+      stroke:"#3b3157","stroke-width":2},g);
+    T(246,678,"MODEL",{size:16,fill:"var(--purple)",anchor:"start",parent:g});
+    T(370,678,"stations, buffers, routing, processing-time distributions, failures, "+
+      "genealogy",{size:16,weight:"normal",fill:"var(--ink)",anchor:"start",parent:g});
+    T(246,714,"SKIP",{size:16,fill:"var(--muted)",anchor:"start",parent:g});
+    T(370,714,"3D geometry, robot kinematics, weld / paint physics, write-back to "+
+      "line control",{size:16,weight:"normal",fill:"var(--muted)",anchor:"start",parent:g});
+    requestAnimationFrame(()=>g.classList.add("on"));});
+}
+
+/* ---------- driver ---------- */
+let playing=false,elapsed=0,t0=0,raf=null;
+const clock=document.getElementById("clock"),votext=document.getElementById("votext"),
+      slab=document.getElementById("scenelabel");
+const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000));
+  return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
+const curScene=t=>{let c=SCENES[0];for(const s of SCENES)if(t>=s.t)c=s;return c;};
+function paint(){clock.textContent=fmt(elapsed)+" / "+fmt(TOTAL);
+  const s=curScene(elapsed);slab.textContent=s.name;votext.textContent=s.vo;}
+function frame(now){if(!playing)return;elapsed=now-t0;
+  cues.forEach(c=>{if(!c.done&&elapsed>=c.t){try{c.fn();}catch(e){console.error(e);}c.done=true;}});
+  paint();
+  if(elapsed<TOTAL)raf=requestAnimationFrame(frame);
+  else{playing=false;document.getElementById("play").textContent="▶ Play";}}
+function play(){if(playing)return;playing=true;t0=performance.now()-elapsed;
+  document.getElementById("play").textContent="❚❚ Pause";raf=requestAnimationFrame(frame);}
+function pause(){playing=false;cancelAnimationFrame(raf);
+  document.getElementById("play").textContent="▶ Play";}
+function hardReset(){pause();elapsed=0;buildAll();buildCues();paint();}
+function seek(t){pause();buildAll();buildCues();
+  document.body.classList.add("noanim");
+  cues.forEach(c=>{if(c.t<=t){try{c.fn();}catch(e){}c.done=true;}});
+  void document.body.offsetWidth;document.body.classList.remove("noanim");
+  elapsed=t;paint();}
+document.getElementById("play").onclick=()=>playing?pause():play();
+document.getElementById("restart").onclick=()=>hardReset();
+document.getElementById("next").onclick=()=>{const n=SCENES.find(s=>s.t>elapsed+250);if(n)seek(n.t);};
+document.getElementById("prev").onclick=()=>{const p=[...SCENES].reverse().find(s=>s.t<elapsed-250);seek(p?p.t:0);};
+document.getElementById("teleBtn").onclick=e=>{const t=document.getElementById("tele");
+  const hid=t.style.display==="none";t.style.display=hid?"block":"none";
+  e.target.textContent=hid?"Hide script":"Show script";};
+addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();playing?pause():play();}
+  if(e.key==="r"||e.key==="R")hardReset();
+  if(e.key==="ArrowRight")document.getElementById("next").click();
+  if(e.key==="ArrowLeft")document.getElementById("prev").click();
+  if(e.key==="f"||e.key==="F")document.getElementById("stage").requestFullscreen?.();
+});
+hardReset();
+</script>

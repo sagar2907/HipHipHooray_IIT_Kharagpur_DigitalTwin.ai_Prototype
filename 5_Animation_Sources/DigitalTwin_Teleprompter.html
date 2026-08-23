@@ -1,0 +1,225 @@
+<title>DigitalTwin.ai Teleprompter</title>
+<style>
+  :root{--tsize:44px;--purple:#b98cff}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:#05060a;color:#e9ebf0;
+       font-family:Arial,Helvetica,sans-serif;display:flex;flex-direction:column;
+       overflow:hidden}
+
+  #top{display:flex;align-items:center;gap:18px;padding:12px 24px;
+       background:#0b0d12;border-bottom:1px solid #1a1e27;flex:0 0 auto}
+  #scene{font:bold 15px Arial;color:var(--purple);letter-spacing:.08em}
+  #clock{font:bold 16px Consolas,monospace;color:#fff}
+  #left{font:14px Arial;color:#7b8296;margin-left:auto}
+
+  #bar{height:6px;background:#161a22;flex:0 0 auto}
+  #fill{height:100%;width:0;background:#7c3aed;transition:width .12s linear}
+
+  #script{flex:1;overflow-y:auto;padding:44vh 8vw;scroll-behavior:smooth}
+  #script::-webkit-scrollbar{width:0}
+  .sc{font:bold 13px Arial;color:#4a5162;letter-spacing:.14em;margin:34px 0 10px}
+  .chunk{font:600 var(--tsize)/1.42 Arial;display:block;margin:0 0 18px;
+         color:#454b5c;transition:color .18s ease}
+  .chunk.spoken{color:#2f3440}
+  .chunk.now{color:#ffffff}
+  .chunk.now .w{color:#ffffff}
+  .chunk.now .w.pending{color:#8a92a6}
+  .chunk.now .w.cur{background:#7c3aed;color:#fff;border-radius:5px;padding:2px 7px}
+
+  #ctrl{display:flex;gap:9px;align-items:center;padding:12px 24px;
+        background:#0b0d12;border-top:1px solid #1a1e27;flex:0 0 auto;flex-wrap:wrap}
+  button{background:#6d28d9;color:#fff;border:0;padding:10px 17px;border-radius:5px;
+         font:bold 13px Arial;cursor:pointer}
+  button:hover{background:#7c3aed}
+  button.g{background:#242833}
+  .hint{font:12px Arial;color:#6b7285;margin-left:auto}
+
+  #pre{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+       background:rgba(5,6,10,.94);font:bold 28vh Arial;color:var(--purple);z-index:9}
+  body.mirror #script{transform:scaleX(-1)}
+</style>
+
+<div id="top">
+  <span id="scene">READY</span>
+  <span id="clock">0:00 / 2:50</span>
+  <span id="left">press Play — 3s countdown, then read the white line</span>
+</div>
+<div id="bar"><div id="fill"></div></div>
+<div id="script"></div>
+<div id="ctrl">
+  <button id="play">▶ Play</button>
+  <button id="restart" class="g">⟲ Restart</button>
+  <button id="prev" class="g">◀ Scene</button>
+  <button id="next" class="g">Scene ▶</button>
+  <button id="b2" class="g">−2s</button>
+  <button id="f2" class="g">+2s</button>
+  <button id="sm" class="g">A−</button>
+  <button id="bg" class="g">A+</button>
+  <button id="mir" class="g">Mirror</button>
+  <span class="hint">Space play/pause · R restart · ← → scenes · [ ] nudge 2s · F fullscreen</span>
+</div>
+<div id="pre"></div>
+
+<script>
+/* Same script and same 170s clock as the animation, so the two stay in step. */
+const SCENES=[
+ {t:0,     name:"1 · The line",       vo:"A vehicle assembly line. Twenty stations in sequence. When one slows, the whole line feels it \u2014 and in automotive, unplanned downtime runs into millions of dollars an hour."},
+ {t:10000, name:"2 · PROBLEM 1",      vo:"Problem one. A bottleneck ripples downstream, and it will not stay put. We jammed one station, repaired it, then ran it at twice every other station's speed. One hundred and six cars either way \u2014 the queue simply moved. In our shifts the constraint changed about six times."},
+ {t:32000, name:"3 · SOLUTION 1",     vo:"Our answer: stop asking who looks busy, and read the signature. The constraint runs flat out while the station behind it blocks and the one ahead starves. We rank by processing time divided by uptime \u2014 that finds it 46 percent of the time, against 35 for utilisation ranking. And buffer fill-rates flag the next bottleneck before it forms."},
+ {t:58000, name:"4 · PROBLEM 2",      vo:"Problem two. An early defect can go uncaught for dozens of vehicles. A tool drifts out of calibration, and its own sensor drifts with it, so the reading still says pass. In our data, eleven thousand six hundred defective joints passed as OK."},
+ {t:76000, name:"5 · SOLUTION 2",     vo:"Our answer: track always-on signals \u2014 torque, current, cycle time \u2014 against each station's own healthy baseline. When the health score bends we classify why first: a worn tool needs servicing, a drifted sensor needs only recalibrating. Get that wrong and you either pass bad joints or scrap good ones. Median warning: four hundred to thirteen hundred vehicles."},
+ {t:100000,name:"6 · PROBLEM 3",      vo:"Problem three. Most real factories have stations with little or no sensor data \u2014 manual work and legacy equipment that emit nothing at all. And guessing is dangerous: treating the gap between two timestamps as real work overstates it by fifty-three percent."},
+ {t:118000,name:"7 · SOLUTION 3",     vo:"Our answer: bracket the silent station between the timestamps either side, then cross-check the neighbours \u2014 an empty upstream buffer means it was waiting, not working. For several dark stations, we locate the culprit the way seismographs locate an earthquake, from arrival delays on each side. Every estimate ships a confidence score."},
+ {t:144000,name:"8 · The loop",       vo:"All three run on one AI loop, on signals the plant already emits. The twin ranks what to do in cars gained and shows its evidence. A person confirms every change \u2014 it never writes to line control. Then it re-reads the line and corrects its model."},
+ {t:164000,name:"9 · Close",          vo:"DigitalTwin.ai. The plant already has the data. What it has been missing is a model that connects that data to cause, consequence, and the next best action."}
+];
+SCENES.forEach(s=>s.t=Math.round(s.t*(170000/176000)));
+const TOTAL=170000;
+
+/* split into speakable chunks, weighted by word count */
+function splitVO(vo){
+  const sents=vo.match(/[^.!?]+[.!?]+/g)||[vo],out=[];
+  sents.forEach(s=>{
+    s=s.trim();
+    if(s.split(/\s+/).length<=21){out.push(s);return;}
+    const marks=[];const re=/[,—;:]\s/g;let m;
+    while((m=re.exec(s)))marks.push(m.index+1);
+    if(!marks.length){out.push(s);return;}
+    const mid=s.length/2;
+    const cut=marks.reduce((a,b)=>Math.abs(b-mid)<Math.abs(a-mid)?b:a);
+    out.push(s.slice(0,cut).trim(),s.slice(cut).trim());
+  });
+  const merged=[];
+  out.filter(Boolean).forEach(p=>{
+    const last=merged[merged.length-1],w=p.split(/\s+/).length;
+    if(last&&(last.split(/\s+/).length<7||w<6)&&
+       last.split(/\s+/).length+w<=21)merged[merged.length-1]=last+" "+p;
+    else merged.push(p);
+  });
+  return merged;
+}
+const CHUNKS=[];
+SCENES.forEach((s,i)=>{
+  const end=(i+1<SCENES.length)?SCENES[i+1].t:TOTAL,span=end-s.t;
+  const parts=splitVO(s.vo),wc=parts.map(p=>p.split(/\s+/).length);
+  const tot=wc.reduce((a,b)=>a+b,0);let acc=0;
+  parts.forEach((p,k)=>{
+    const a=s.t+(acc/tot)*span;acc+=wc[k];
+    CHUNKS.push({scene:i,t:a,end:s.t+(acc/tot)*span,text:p});
+  });
+});
+
+/* build the full script once */
+const script=document.getElementById("script");
+const els=[];
+SCENES.forEach((s,i)=>{
+  const h=document.createElement("div");
+  h.className="sc";h.textContent=s.name;script.appendChild(h);
+  CHUNKS.filter(c=>c.scene===i).forEach(c=>{
+    const sp=document.createElement("span");
+    sp.className="chunk";
+    c.text.split(/\s+/).forEach((w,k)=>{
+      const ws=document.createElement("span");
+      ws.className="w";ws.textContent=(k?" ":"")+w;sp.appendChild(ws);
+    });
+    script.appendChild(sp);
+    els.push({el:sp,c});
+  });
+});
+
+const clockEl=document.getElementById("clock"),sceneEl=document.getElementById("scene"),
+      leftEl=document.getElementById("left"),fill=document.getElementById("fill");
+const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000));
+  return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
+
+let playing=false,elapsed=0,t0=0,raf=null,prerolling=false,lastLive=null;
+
+function centre(el){
+  const b=script.getBoundingClientRect(),r=el.getBoundingClientRect();
+  script.scrollTop+=(r.top+r.height/2)-(b.top+b.height/2);
+}
+function paint(){
+  clockEl.textContent=fmt(elapsed)+" / "+fmt(TOTAL);
+  const si=SCENES.reduce((a,s,i)=>elapsed>=s.t?i:a,0);
+  const sEnd=(si+1<SCENES.length)?SCENES[si+1].t:TOTAL;
+  sceneEl.textContent=SCENES[si].name;
+  leftEl.textContent=Math.max(0,Math.ceil((sEnd-elapsed)/1000))+"s left in scene";
+  let live=null;
+  els.forEach(({el,c})=>{
+    el.classList.remove("spoken","now");
+    if(elapsed>=c.end)el.classList.add("spoken");
+    else if(elapsed>=c.t){el.classList.add("now");live={el,c};}
+  });
+  if(live){
+    const k=(elapsed-live.c.t)/(live.c.end-live.c.t);
+    const ws=live.el.querySelectorAll(".w");
+    const cur=Math.min(ws.length-1,Math.floor(k*ws.length));
+    ws.forEach((w,i)=>{
+      w.classList.toggle("cur",i===cur);
+      w.classList.toggle("pending",i>cur);
+    });
+    fill.style.width=(k*100).toFixed(1)+"%";
+    if(live.el!==lastLive){lastLive=live.el;centre(live.el);}
+  }else fill.style.width="0%";
+}
+function frame(now){
+  if(!playing)return;
+  elapsed=Math.min(now-t0,TOTAL);paint();
+  if(elapsed<TOTAL)raf=requestAnimationFrame(frame);
+  else{playing=false;document.getElementById("play").textContent="▶ Play";}
+}
+function play(){if(playing)return;playing=true;t0=performance.now()-elapsed;
+  document.getElementById("play").textContent="❚❚ Pause";raf=requestAnimationFrame(frame);}
+function pause(){playing=false;cancelAnimationFrame(raf);
+  document.getElementById("play").textContent="▶ Play";}
+function seek(t){
+  const wasPlaying=playing;pause();
+  elapsed=Math.max(0,Math.min(t,TOTAL));lastLive=null;paint();
+  if(wasPlaying)play();
+}
+function playPre(){
+  if(prerolling)return;
+  if(playing){pause();return;}
+  if(elapsed>150){play();return;}
+  prerolling=true;
+  const el=document.getElementById("pre");let n=3;
+  el.style.display="flex";el.textContent=n;
+  const iv=setInterval(()=>{
+    n--;
+    if(n>0)el.textContent=n;
+    else if(n===0)el.textContent="GO";
+    else{clearInterval(iv);el.style.display="none";prerolling=false;play();}
+  },1000);
+}
+const size=d=>{
+  const c=parseInt(getComputedStyle(document.documentElement)
+    .getPropertyValue("--tsize"))||44;
+  document.documentElement.style.setProperty("--tsize",
+    Math.max(24,Math.min(88,c+d))+"px");
+  lastLive=null;paint();
+};
+document.getElementById("play").onclick=playPre;
+document.getElementById("restart").onclick=()=>{pause();elapsed=0;lastLive=null;
+  paint();script.scrollTop=0;};
+document.getElementById("next").onclick=()=>{
+  const n=SCENES.find(s=>s.t>elapsed+250);if(n)seek(n.t);};
+document.getElementById("prev").onclick=()=>{
+  const p=[...SCENES].reverse().find(s=>s.t<elapsed-250);seek(p?p.t:0);};
+document.getElementById("b2").onclick=()=>seek(elapsed-2000);
+document.getElementById("f2").onclick=()=>seek(elapsed+2000);
+document.getElementById("sm").onclick=()=>size(-4);
+document.getElementById("bg").onclick=()=>size(4);
+document.getElementById("mir").onclick=()=>document.body.classList.toggle("mirror");
+addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();playPre();}
+  else if(e.key==="r"||e.key==="R")document.getElementById("restart").click();
+  else if(e.key==="ArrowRight")document.getElementById("next").click();
+  else if(e.key==="ArrowLeft")document.getElementById("prev").click();
+  else if(e.key==="[")seek(elapsed-2000);
+  else if(e.key==="]")seek(elapsed+2000);
+  else if(e.key==="f"||e.key==="F")document.documentElement.requestFullscreen?.();
+  else if(e.key==="m"||e.key==="M")document.body.classList.toggle("mirror");
+});
+paint();
+</script>
