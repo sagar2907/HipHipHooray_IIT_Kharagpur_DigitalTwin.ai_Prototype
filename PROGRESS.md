@@ -37,6 +37,7 @@
 | 2026-08-23 | Parameter contract locked — 51 bottleneck + 37 defect fields | Priyansh | `done` |
 | 2026-08-23 | `PROGRESS.md` live; both suggestion folders filed (12 + 5 proposals) | Both | `done` |
 | 2026-08-23 | Timeline added; updating this file made a standing rule | Priyansh | `done` |
+| 2026-08-25 | **Complexity 1 solved and written up** — dark stations, end to end | Priyansh | `done` |
 | _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
 | _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
@@ -52,12 +53,15 @@ Move the `▲` marker as workstreams complete. Fill the `_tbd_` dates once the d
 
 ## Right now
 
-_Last updated: 2026-08-23 by **Sagar**_
+_Last updated: 2026-08-25 by **Priyansh**_
 
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
 | **Sagar** | reviewed repo + Priyansh's audit; filed `suggestion_by_sagar/`; **B (the loop)** not yet started | — | — | — |
-| **Priyansh** | repo seeded; next is **A (clear the ground)** | `main` | — | — |
+| **Priyansh** | Complexity 1 written up in `suggestion_by_priyansh/` Part A. Next: Complexity 2, then **A (clear the ground)** | `main` | — | — |
+
+**Sagar — two schema decisions waiting on you** in Part A of my suggestions file: a
+`manual_check` event type, and a fourth provenance value `attested`. Both touch `record.py`.
 
 **Next joint checkpoint:** _(set a date)_
 
@@ -72,6 +76,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-25 | Priyansh | **Complexity 1 worked through and written up** in `suggestion_by_priyansh/` Part A — dark-station handling end to end: coupling map, detection horizon, cycle time as trigger-not-diagnosis, and the sensor case as a window-dated schedule. Proposes two schema changes (`manual_check` event, `attested` provenance) — needs Sagar's sign-off. | — |
 | 2026-08-23 | Priyansh | Added the **Timeline** section and made it a standing rule that every piece of work updates this file in the same commit. | — |
 | 2026-08-23 | Sagar | Added `suggestion_by_sagar/` — 5 proposals: cite Turning Point Method (blocked/starved signature is prior art), add IoU as a second scoring axis, ARIMA-forecast spike as a candidate for B after its gate is green, ISO 22400 vocabulary for the leadership view, closed the old prototype-placeholder note | `fdf5f7c` |
 | 2026-08-23 | Priyansh | Added `suggestion_by_priyansh/` — 12 proposals for Sagar to review, with a response table. Sagar's equivalent folder to follow. | `8e747e2` |
