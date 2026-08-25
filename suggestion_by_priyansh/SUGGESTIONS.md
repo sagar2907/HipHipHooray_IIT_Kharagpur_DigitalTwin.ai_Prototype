@@ -145,6 +145,132 @@ assertion, and is the same demo we already planned for the dark-station flow sto
 
 ---
 
+## Complexity 2 — Multi-causal, intermittent root causes
+
+> *"Bottlenecks and defects often have multi-causal, intermittent root causes (equipment
+> wear, operator variation, upstream part quality, environmental conditions) that are hard
+> to isolate from data alone."*
+
+**Status:** `open` — needs Sagar's review. Adds `zone_id` to layout config and a confounded
+scenario mode to the generator (my files); the co-occurrence engine is new and unowned.
+
+### 2.1 Why it's hard
+
+The four causes are **correlated with each other** (ambient rises in the afternoon; the
+afternoon is also shift 2; shift 2 also runs a different variant mix). Intermittent means
+**tiny sample size** and **no reproduction on demand**. And multi-causal usually means
+**interaction** — A alone fine, B alone fine, A+B fails.
+
+Note the brief's own wording: *"hard to isolate from data alone."* It is telling us
+correlation won't get there. Our answer takes that seriously rather than throwing a model at it.
+
+### 2.2 The core move — isolate by **scope**, not by statistics
+
+Each cause leaves a different fingerprint in **how far the correlation spreads**. We don't
+disentangle them statistically; we tell them apart structurally.
+
+| Root cause | Shape in time | Who else is affected |
+|---|---|---|
+| Equipment wear | slow monotonic drift | **this station only**, persistent |
+| Upstream part quality | step change | **every station on that lot**, none on other lots |
+| Environmental | slow cyclic | **every station in that zone**, regardless of lot |
+| Operator / practice | step at shift boundary | **this station**, shift-periodic |
+
+Needs four identifiers we already have or can add cheaply: `station_id`, `material_lot_id`,
+`zone_id`, `shift_id`. No new sensors.
+
+**The negative control is the whole argument.** 21 of 23 tools on the bad lot alarmed and
+**zero** on other lots. A shift or ambient effect would have moved those too. That is
+correlation *with a control*, which is categorically stronger than correlation.
+**Always look at who is fine, not just who is broken.**
+
+### 2.3 Intermittent doesn't mean random — it means conditional
+
+An intermittent fault is almost never random. It is **conditional on something not yet
+measured** — a variant, an ambient threshold, the first 20 minutes after a break, a supplier.
+So we stop asking "why is it unpredictable" and ask "**what else is true when it happens**",
+which turns intermittency into an estimable conditional effect.
+
+Two supports for the low-sample problem: CUSUM accumulates weak evidence over time rather
+than needing a big window, and pooling across an equipment family (then testing both pooled
+and individual) separates a family-level issue from a single-tool one.
+
+### 2.4 Natural experiments the plant already runs
+
+Free, and nobody reads them:
+
+| Experiment | What it settles |
+|---|---|
+| **Parallel twin comparison** — two servers, same operation, same lot, shift and air | **Definitively equipment.** Everything else held constant by construction. We already have a parallel pair in L3 |
+| **Did it follow the tool?** — `tool_serial` appears at a different station after a swap | Tool vs fixture / position / practice |
+| **Lot boundary before/after** | Material, with a clean control period either side |
+| **Variant stratification** | Line balancing vs equipment |
+
+### 2.5 What goes in the prototype
+
+| Component | State |
+|---|---|
+| Five grouping tags on every event | ✅ have four; **`zone_id` missing** — one line in layout config, and without it "environmental" and "material" both just look like *many stations at once* |
+| **Change register** — timeline of everything that changed (lot, shift, variant, maintenance, calibration, tool move, changeover, ambient excursion, break) | ❌ new. This is what produces the *"couldn't rule out"* line |
+| **Co-occurrence engine** — on alarm, build a contingency table per grouping dimension (alarmed/not × in-group/out-group) and score concentration | ❌ new, ~60 lines. No model, no training. **This is the core piece** |
+| **Signature classifier** — drift / step / cyclic / shift-step | ⚠️ mostly have (shift ratio, spread ratio); add time-shape |
+| **Natural-experiment queries** — the four above | ❌ new, but they are database queries, not models |
+| **Ranker + experiment proposer** | ❌ new |
+| **Cause panel** in the UI | ❌ new |
+
+**Output contract — never a single cause.** Ranked hypotheses with confidence, the evidence
+(*who else, and who not*), the **confounders not ruled out**, and either a recommended action
+or a proposed test. When the top two are within ~15 points, propose the cheapest separating
+test instead of guessing — e.g. *"swap tools between S22 and S24 at the next planned stop;
+if the effect follows the tool it's the tool. 20 minutes."* That is the direct answer to
+*"hard to isolate from data alone."*
+
+### 2.6 The demo scenario we must be able to generate
+
+**Easy to miss:** our generator currently injects faults one at a time. We cannot demonstrate
+untangling multiple causes if only one cause is ever present. Add a **confounded scenario
+mode** — two overlapping causes, both truths recorded:
+
+> Bad lot enters 09:40. Ambient rises 4°C at the same time. Two tools are genuinely wearing.
+> Truth: 18 affected by the lot, 2 by wear, 0 by ambient.
+
+The naive view shows 20 tools alarming at once and the plant looks like it is falling apart.
+The twin says: *"18 share lot L-4471 and no tool outside it is affected — hold the lot. Two
+are unrelated and genuinely wearing. Ambient moved, but other zone tools are flat, so it
+isn't that."* **Thirty seconds, and the clause is answered.**
+
+### 2.7 How we score it
+
+Because we own the simulator the true cause is known, so this is measurable rather than claimed:
+
+- Cause attribution **top-1**
+- Cause attribution **on confounded scenarios** — the hard case: does it find *both*?
+- **Calibration** — when it says 68%, is it right ~68% of the time
+- **False attribution rate** — how often it confidently blames the wrong cause
+
+Nobody will report cause-attribution accuracy on deliberately confounded scenarios. That is a headline.
+
+### 2.8 What we will not build
+
+A causal-graph / do-calculus engine (needs assumptions we cannot verify, unexplainable in
+five minutes — scope plus shape does the job with arithmetic); a deep model; and anything
+that outputs a single cause.
+
+Gradient boosting is allowed in exactly one role: surfacing which **combinations** of
+conditions co-occur with failure, since trees find interactions naturally. It is a
+**hypothesis generator, never a conclusion** — anything it surfaces must be confirmed by a
+natural experiment or ruled physically plausible.
+
+### 2.9 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Complexity 2 — multi-causal, intermittent root causes | ✅ all four causes; operator identified by scope but **never attributed to an individual** |
+| Solutioning: predictive techniques, *"how you'd validate before trusting output"* | ✅ negative controls and natural experiments **are** the validation |
+| Complexity 7 — false alarms erode trust | ⚠️ partial — "couldn't rule out" and proposed tests reduce confident wrong calls |
+
+---
+
 # Part B — Numbered proposals
 
 ## 1 — Sequencing: build the demo first, not last
