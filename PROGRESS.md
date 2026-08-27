@@ -21,13 +21,30 @@
 
 ## Timeline
 
-**Round 2 deadline:** _(set this — everything below hangs off it)_
+**Round 2 deadline: 2026-08-30.** Set 08-27 → **3 days left, and nothing is built.**
+
+> **TRIAGE — this supersedes the phase ordering below.** There is not time for
+> A–G. Judged deliverable is a *working prototype*, so:
+>
+> | | Workstream | Call |
+> |---|---|---|
+> | **B** | The loop | **BUILD — everything else is negotiable, this is not** |
+> | **E** | Views | **ONE view, not three.** Supervisor only |
+> | **G** | Deck + business case | **BUILD — no submission without it** |
+> | **A** | Clear the ground | mostly done 08-27 (12/12 tests, noise floor). Land the 2 doc errors only |
+> | **D** | 40 stations | **CUT the new build.** Run the 2 transfer tests only — they need no new code and can run unattended |
+> | **C** | Alert ledger | **CUT to a stub** — log alerts, show running precision. No calibration campaign |
+> | **F** | Genealogy | **CUT** — per the status board's own rule, F goes first |
+>
+> **Compute is not the constraint, human hours are.** The transfer runs and any
+> truth rebuild should be launched in the background immediately and left to run
+> while we build; do not sit and watch them.
 
 ```
-  design ──▶ A ──▶ B ──▶ C ──▶ D ──▶ E ──▶ F ──▶ G
-   CLOSED    ▲
-             we are here. 7/7 complexities and 6/6 solutioning areas
-             answered. NOTHING is built. Everything left is construction.
+  design ──▶ B ──▶ E-lite ──▶ G ──▶ SUBMIT
+   CLOSED    ▲                      30 Aug
+             we are here, 27 Aug. Design is 100% done and the build is 0%.
+             3 days. C is a stub, D is 2 background runs, F is cut.
 ```
 
 | Date | Milestone | Who | State |
@@ -54,14 +71,14 @@
 | 2026-08-27 | **DESIGN PHASE CLOSED** — 7/7 complexities, 6/6 solutioning areas | Priyansh | `done` |
 | 2026-08-27 | Accepted both Complexity 1 schema proposals (`manual_check`, `attested`); drafted 40-station segmented layout (L5) locally, calibrated against real Bosch/AI4I2020/SECOM data — **not pushed, review pending** | Sagar | `review` |
 | 2026-08-27 | **Verification pass — 9/9 defects worked through, suite 12/12 green.** Confidence miscalibration and the CRN failure-desync both found and fixed | Sagar | `done` |
-| _tbd_ | **A** — Clear the ground *(tests + noise floor now done by the verification pass; doc errors remain)* | Priyansh | `todo` |
-| _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
-| _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
-| _tbd_ | **D** — 40 stations + transfer tests | Priyansh | `todo` |
-| _tbd_ | **E** — Three stakeholder views | Both | `todo` |
-| _tbd_ | **F** — Genealogy + stop-or-continue | Both | `todo` |
-| _tbd_ | **G** — Business case + deck | Both | `todo` |
-| _tbd_ | **Submission** — proposal, prototype, pitch | Both | `todo` |
+| 08-27→28 | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
+| 08-28 | **D-lite** — 2 transfer tests, run unattended in background | Priyansh | `todo` |
+| 08-28→29 | **E-lite** — ONE view (supervisor), fed by the loop | Both | `todo` |
+| 08-29 | **C-stub** — alert log + running precision line | Sagar | `todo` |
+| 08-29→30 | **G** — deck + business case rebuilt around the prototype | Both | `todo` |
+| 08-30 | **Submission** — proposal, prototype, pitch | Both | `todo` |
+| — | ~~**F** — Genealogy + stop-or-continue~~ | — | `cut` |
+| — | ~~**D** — new 40-station build~~ (L5 draft stays a draft) | — | `cut` |
 
 Move the `▲` marker as workstreams complete. Fill the `_tbd_` dates once the deadline is set.
 
