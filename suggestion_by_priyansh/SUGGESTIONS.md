@@ -542,6 +542,132 @@ Containment precision/recall is measurable only because we built the plant. Nobo
 
 ---
 
+## Complexity 5 — Three stakeholder views
+
+> *"Different stakeholders need very different views of the same twin — a floor supervisor
+> needs real-time, in-the-moment signals, a plant manager needs weekly planning trends, and
+> leadership needs a rollout business case."*
+
+**Status:** `open` — needs Sagar's review. This is Workstream E (joint); the record stream
+it renders comes from his Workstream B.
+
+The three personas are the easy part. **The interesting word is "same."** Anyone can build
+three dashboards; the claim worth making is that these are three views of *one twin* — and
+that is provable rather than assertable.
+
+### 5.1 The proof — a reconciliation test
+
+```
+leadership annual figure == sum of manager weekly figures
+manager weekly figure    == sum of supervisor per-minute records
+```
+
+Write it as a test. If it fails we don't have one twin, we have three products that will
+drift apart the first time one is patched. Same move as the read-only enforcement test in
+C3: **assert the architectural property in code rather than claiming it in a diagram.**
+
+### 5.2 The three decisions differ on two axes, not one
+
+| | Time to decide | Time to reverse | Cost of being wrong |
+|---|---|---|---|
+| **Supervisor** | seconds | minutes | a wasted walk |
+| **Manager** | hours | a week | a misallocated shift |
+| **Leadership** | a quarter | years | a capital programme |
+
+**So the same number surfaces at a different confidence threshold in each view.** A
+supervisor can act on 60% because being wrong costs a two-minute walk; leadership cannot fund
+a rollout on 60%. The confidence gate is **per view, not global** — only possible because our
+confidence is calibrated rather than asserted, so this is a direct payoff from that decision.
+
+### 5.3 The manager's view is NOT the supervisor's view averaged
+
+Our own measurement exposes the trap: **the constraint moves ~6× per shift**, so "the
+bottleneck last week" describes a station that was constraining maybe 15% of the time. The
+manager needs a **different statistic over the same records**, not a coarser one.
+
+| ❌ Wrong | ✅ Right |
+|---|---|
+| "Average bottleneck: S12" | **Constraint occupancy heatmap** — station × time, where constraints *recur* |
+| "Average confidence" | **Sole vs shifting periods** (Roser 2002) — how much of the week had a dominant station at all |
+| "Average buffer level" | Which buffers *threatened*, and how often |
+
+The heatmap earns its place because it reveals what is invisible at both other timescales —
+e.g. *"S07 constrains for two hours after every changeover."* Actionable only at this timescale.
+
+### 5.4 What each view must NOT show
+
+ISA-101 names the failure directly: embedding lower-level detail on upper-level screens.
+
+| View | Must not show |
+|---|---|
+| Supervisor | Weekly trends, ROI, model internals — none of it changes where they walk next |
+| Manager | Per-second state — noise at their timescale |
+| Leadership | Station detail they cannot act on |
+
+**One inversion, stated loudly: leadership must see the negative results.** The failed
+overtake risk, the unvalidated dark localisation, the two-regime split rather than a blended
+accuracy number. They are the audience deciding whether to *fund a rollout*, and a business
+case resting on capabilities that don't work is a false prospectus. **The leadership view is
+where honesty matters most, not least.**
+
+### 5.5 Leadership's view is live, not a slide
+
+The twin computes these numbers, so the view recomputes continuously — cars recovered to
+date, sensor spend recommended, payback tracked. And the feature nobody will have:
+
+> **Actual vs forecast.** *"We said this sensor would save ₹10L/year. Twelve months in,
+> measured saving: ₹8.4L."*
+
+That is the trust ledger applied to money — the same *validated against outcomes over time*
+discipline the brief demands, pointed at the business case. It is the difference between a
+projection and a track record.
+
+### 5.6 Adoption risk is asymmetric — and it all sits on one screen
+
+Managers and leadership *consume* reports. **The supervisor is the only user who can kill the
+system by ignoring it**, and the brief says exactly how: false alarms erode floor trust.
+
+So three things live permanently on the supervisor view, none of which help find the
+constraint but all of which decide whether the tool is still in use in month three:
+
+- The **trust ledger** — *"right on 24 of the last 34 calls"*
+- **Override in one click**, logged
+- **Alarm count against budget** — *"37 this shift, budget 150"*
+
+### 5.7 What goes in the prototype
+
+| Item | State |
+|---|---|
+| One record stream as the single source | ✅ Workstream B produces it |
+| Three aggregators — per-minute (identity), per-week, per-quarter | ❌ new, small |
+| Three renderers over those aggregators | ❌ new — Workstream E |
+| **Reconciliation test** | ❌ new, tiny, high credibility |
+| Per-view confidence thresholds | ❌ new, small |
+| **Constraint occupancy heatmap** | ❌ new — the manager view's core visual |
+| Actual-vs-forecast on the leadership view | ❌ new |
+| Trust ledger + override + alarm budget on supervisor view | ⚠️ ledger is Workstream C |
+
+**Not React. Not three apps.** One page, three tabs, ISA-101 grayscale on the supervisor view.
+
+### 5.8 How we prove it in the demo — about 40 seconds
+
+1. **Switch views live on the same running data** — not three screenshots
+2. **Trace one alert through all three** — an instruction on the floor, a recurrence pattern
+   to the manager, a line item in recovered throughput to leadership
+3. **Show the reconciliation test passing**
+
+### 5.9 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Complexity 5 — three stakeholder views | ✅ fully |
+| Solutioning: user experience, *"from the same underlying model"* | ✅ provably, via reconciliation |
+| Complexity 7 — false alarms erode trust | ⚠️ partial — ledger and alarm budget made visible |
+| Deliverable: business case | ⚠️ partial — the leadership view is its live form |
+| Gap list: **three stakeholder views** | ✅ specified |
+
+---
+
 # Part B — Numbered proposals
 
 ## 1 — Sequencing: build the demo first, not last
