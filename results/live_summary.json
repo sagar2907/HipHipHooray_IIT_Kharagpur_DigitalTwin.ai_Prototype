@@ -1,0 +1,39 @@
+{
+ "frames": 209,
+ "alerts": 39,
+ "shifts_completed": 1,
+ "distinct_shifts_seen": 2,
+ "distinct_runs": 2,
+ "sim_hours": 17.4,
+ "constraint_occupancy_pct": {
+  "S20": 40.6,
+  "S19": 22.5,
+  "S04": 16.0,
+  "S12": 6.4,
+  "S03": 5.3,
+  "S05": 3.7,
+  "S01": 2.1,
+  "S10": 1.6,
+  "S11": 1.1,
+  "S07": 0.5
+ },
+ "alerts_per_shift": 19.5,
+ "isa_18_2_budget_150": "WITHIN",
+ "alert_kinds": {
+  "forming": 19,
+  "constraint": 20
+ },
+ "forming_warnings": 211,
+ "forming_naming_a_dark_station": 42,
+ "forming_dark_pct": 19.9,
+ "prescription_signatures": {
+  "breakdown": 54,
+  "steady": 14,
+  "slowing": 117,
+  "starved": 2
+ },
+ "loop_ms": {
+  "mean": 34.8,
+  "max": 70.9
+ }
+}

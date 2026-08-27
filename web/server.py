@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "src"))
 from twin.record import Recorder          # noqa: E402
 from twin.loop import TwinLoop            # noqa: E402
 from twin.genealogy import assess_all     # noqa: E402
+from twin.sink import LiveSink            # noqa: E402
 
 app = FastAPI(title="DigitalTwin.ai")
 STATE: dict = {}
@@ -67,6 +68,7 @@ async def stream():
     loop: TwinLoop = STATE["loop"]
     speed: float = STATE["speed"]
     delay = loop.step_s / speed
+    sink: LiveSink = STATE["sink"]
 
     # One stream drives the loop. A page refresh opens a second connection to
     # the SAME loop, which was double-advancing the shift counter and racing
@@ -78,6 +80,7 @@ async def stream():
         runs = STATE["runs"]
         i = 0
         while True:
+            last = None
             for frame in loop.frames():
                 if STATE["gen"] != mine:
                     return          # a newer viewer took over
@@ -86,8 +89,13 @@ async def stream():
                 # panel is causal too rather than jumping to end-of-shift
                 STATE["now_s"] = frame["t_s"]
                 STATE["constraint"] = frame.get("constraint")
+                last = frame
+                sink.frame(frame)
+                sink.alerts(loop.ledger)
                 yield f"data: {json.dumps(frame)}\n\n"
                 await asyncio.sleep(delay)
+            if last is not None:
+                sink.shift(loop.shift_no, last.get("run", ""), last, loop.ledger)
 
             i += 1
             if STATE["gen"] != mine:
@@ -140,6 +148,18 @@ def genealogy(at_s: int = 0):
                          "exit_station": rec.exit_station, "tools": rows})
 
 
+@app.get("/recording")
+def recording():
+    """What has been captured so far, without interrupting the run."""
+    sink: LiveSink = STATE["sink"]
+    st = sink.status()
+    d = os.path.join(HERE, "..", "results", "live")
+    if os.path.isdir(d):
+        st["files"] = {f: os.path.getsize(os.path.join(d, f))
+                       for f in sorted(os.listdir(d))}
+    return JSONResponse(st)
+
+
 @app.get("/rollup")
 def rollup():
     """Manager + leadership views. Precomputed by scripts/build_rollup.py so
@@ -188,6 +208,8 @@ def main():
                     help="how many consecutive shifts to replay; the alert "
                          "ledger carries across them (Complexity 7: validated "
                          "over time). 0 = run forever, cycling the runs.")
+    ap.add_argument("--no-record", action="store_true",
+                    help="do not persist frames/alerts to results/live/")
     a = ap.parse_args()
 
     if not os.path.isdir(a.run):
@@ -217,8 +239,11 @@ def main():
               f"(fitted on {len(cal['fit_runs'])} runs, this run excluded)")
     else:
         print("  calib : none — confidence will be labelled an ordering score")
-    STATE.update(run_dir=a.run, speed=a.speed, step_s=a.step,
+    sink = LiveSink(os.path.join(HERE, "..", "results", "live"),
+                    enabled=not a.no_record)
+    STATE.update(run_dir=a.run, speed=a.speed, step_s=a.step, sink=sink,
                  loop=TwinLoop(rec, step_s=a.step, calibration=cal))
+    print(f"  record: {'-> results/live/ (frames, alerts, shifts)' if sink.enabled else 'disabled'}")
 
     import uvicorn
     print(f"  run   : {a.run}")
