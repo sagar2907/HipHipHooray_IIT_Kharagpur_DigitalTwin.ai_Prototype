@@ -21,7 +21,9 @@
 
 ## Timeline
 
-**Round 2 deadline: 2026-08-30.** Set 08-27 → **3 days left, and nothing is built.**
+**Round 2 deadline: 2026-08-30.** As of **08-28 01:09 IST**: the 27 Aug build
+window elapsed unused, so this is now **2 days + the submission morning, and
+nothing is built.** Design is 100% done; the build is 0%.
 
 > **TRIAGE — this supersedes the phase ordering below.** There is not time for
 > A–G. Judged deliverable is a *working prototype*, so:
@@ -71,6 +73,8 @@
 | 2026-08-27 | **DESIGN PHASE CLOSED** — 7/7 complexities, 6/6 solutioning areas | Priyansh | `done` |
 | 2026-08-27 | Accepted both Complexity 1 schema proposals (`manual_check`, `attested`); drafted 40-station segmented layout (L5) locally, calibrated against real Bosch/AI4I2020/SECOM data — **not pushed, review pending** | Sagar | `review` |
 | 2026-08-27 | **Verification pass — 9/9 defects worked through, suite 12/12 green.** Confidence miscalibration and the CRN failure-desync both found and fixed | Sagar | `done` |
+| 2026-08-27 | Live code moved into this repo; deadline set to 30 Aug; board triaged; **B de-risked — engine is causal and 800x faster than the gate needs** | Sagar | `done` |
+| **08-28 01:09** | **Recommendation layer folded into beat 4; case retrieval deferred to Round 3.** Slice window of 27 Aug elapsed unbuilt — **2 days + submission morning left** | Sagar | `done` |
 | 08-27→28 | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | 08-28 | **D-lite** — 2 transfer tests, run unattended in background | Priyansh | `todo` |
 | 08-28→29 | **E-lite** — ONE view (supervisor), fed by the loop | Both | `todo` |
@@ -98,7 +102,7 @@ judge sees, then build only what those 5 minutes require.
 | 1 | A real shift replays at 60x | It is a **twin, not a shadow** — the whole Round 2 claim | `loop.py` |
 | 2 | The constraint **moves** ~6x a shift; utilisation names one station all day | Our core Round 1 finding, now live | ranking panel |
 | 3 | "S12 forming, ~11 min" — then it happens | Prediction, not description | buffer countdown *(already built)* |
-| 4 | Evidence panel: blocked upstream, starved downstream, effective CT | **Not asserted** — the judge sees the reasoning | `verdict.ranking` *(already there)* |
+| 4 | Evidence panel **+ recommended action**: "relieve S12 — worth 2.3 cars; next best S07, 0.4" | **Not asserted**, and it *acts* — a twin that recommends beats one that only reports | `verdict.ranking` *(already there)* + fault-class→action table (~2 h) |
 | 5 | Ledger: "right on 24 of the last 34" | Answers "false alarms erode trust" | C-stub |
 | 6 | It **advises, never writes**; a person confirms | The ISA-95 boundary we locked | a button + a label |
 | 7 | Worth N cars / CONWIP: same throughput, 36% less lead time, zero capex | ROI, and it is measured | numbers we already hold |
@@ -109,8 +113,9 @@ Anything not serving beats 1–7 is cut. That is the whole scope rule.
 
 | When | Sagar | Priyansh |
 |---|---|---|
-| **27 Aug, tonight** | **The vertical slice.** `record.py` + `loop.py` + FastAPI/SSE + one ugly page. Gate: **a shift replays at 60x in a browser.** Ugly is fine; integrated is not optional | Launch the **2 transfer runs** in the background and leave them. Then start the **deck skeleton** — beats 1–7 as slide titles |
-| **28 Aug** | Beats 2–4: ranking panel, evidence panel, forming warnings. It should look like a plant tool by tonight | Doc errors #2/#3 into deck + Evidence File. Feed transfer numbers in when they land. Keep writing the deck |
+| ~~27 Aug, tonight~~ | ~~The vertical slice~~ **— MISSED. Nothing built. Absorbed into 28 Aug below.** | ~~transfer runs + deck skeleton~~ **— also not started** |
+| **28 Aug, morning** | **The vertical slice, now urgent.** `record.py` + `loop.py` + FastAPI/SSE + one ugly page. Gate: **a shift replays at 60x in a browser.** This slipped once; it cannot slip twice | **First action of the day:** launch the 2 transfer runs in the background and walk away. Then the deck skeleton — beats 1–7 as slide titles |
+| **28 Aug, rest of day** | Beats 2–4: ranking panel, evidence panel + **recommended action**, forming warnings | Doc errors #2/#3 into deck + Evidence File; fault-class→action table (~2 h) for beat 4 |
 | **29 Aug** | Beat 5 (ledger stub) + beat 6 (confirm button). **ISA-101 pass**: grayscale, colour only on deviation | Business case (beat 7) from our own outputs. Deck to full draft |
 | **30 Aug** | **Freeze by midday.** Screen-record the 5 minutes as insurance against a live failure | Deck final. Submit with time to spare |
 
@@ -157,8 +162,13 @@ match what you already had planned.
 
 Append-only, newest first. Both of us add to this.
 
+> **Times are IST and mandatory from 2026-08-28 onward** — with a 30 Aug
+> deadline, date granularity is too coarse to see slippage.
+
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| **08-28 01:09** | Sagar | **Recommendation layer: decided IN. Case retrieval: deferred to Round 3.** Sagar proposed a RAG pipeline — a store of remediation techniques plus past-bottleneck history — so the twin suggests a fix, not just a finding. Assessment: (a) **it is not RAG**, there is no LLM and no generation; naming it RAG would be the same class of overclaim as the 46/58 attribution we just spent two days killing — it is a decision layer over a counterfactual engine. (b) **We have already measured "what should I do" three times and never surfaced any of it**: sensitivity under paired CRN (which station, worth how many cars), tool-fault classification (recalibrate vs replace — *opposite* correct actions), and `truth/intervention.csv` (fix now vs at the break). So the gap is presentation, not machinery. (c) A small library mapping our **own simulated fault classes** (`degrade_ramp`, `station_down`, `material_starvation`, `quality_hold`, blocked-upstream, micro-stops) to standard responses is defensible and ~2 h of writing — not invented domain knowledge. (d) **Case retrieval is cut**: the system has never run, so there is no case history; retrieval over an empty base is theatre and seeding it synthetically would force us either to label a stub or to hide one. Becomes strong in Round 3 once the ledger holds real history. **Test applied: does it need data we do not already have? If yes, it is Round 3.** | — |
+| **08-28 01:09** | Sagar | **SCHEDULE SLIP LOGGED: the 27 Aug vertical-slice window elapsed with nothing built.** The plan's first and most important gate — a shift replaying at 60x in a browser — did not happen last night. Remaining: 28, 29, and the morning of the 30th. The B engine is verified ready (causal 13/13, 6 ms/verdict), so this is lost calendar time, not lost work — but rule 1 of the plan ("integrate on day 1, not day 3") has already been broken once and cannot be broken again. | — |
 | 2026-08-27 | Sagar | **B de-risked — Priyansh's suggestion #1 is CONFIRMED: the loop is a wrapper, not a rewrite.** Both halves of B's gate measured on `L1_run_001`. (1) *Causality*: deleted all data after `now` and re-ran — the verdict is **identical at 13/13 timepoints across the shift**, comparing every station's `effective_ct` and `proc_time`, not just the constraint name. The engine already never sees `t > now`. (2) *Speed*: **6 ms per verdict**; a whole 8 h shift computes in **0.60 s**, so max replay is **~47,800x** against a 60x target that needs 480 s — roughly **800x more headroom than the gate asks for**. So B is not a detection problem at all: the engine is done. What remains is `record.py` (replay driver), `loop.py` (ticker) and one page. The headroom also means the locked Monte-Carlo-rollout method is affordable later if we want it. **Caveat logged:** the dark-station path (`use_states=False`) reads a baseline quantile computed over the *whole* run in `infer_states_from_scans`, which would leak the future — it is not on the demo path, but it must not be wired into the live loop without fixing. | — |
 | 2026-08-27 | Sagar | **Live code moved into this repo — the blocker on both our workstreams.** `src/` `tests/` `scripts/` `results/` (51 files, ~1.1 MB) now versioned here, with a `.gitignore` so `dataset/` and caches stay out. The repo was previously code-less: only a frozen zip in `6_Code/`, so neither of us could clone and run anything, while the ownership table already referred to `src/twin/*` as if it were here. Verified before pushing: no AI references anywhere in the tree, no file >1 MB, no dataset, and `pytest` runs from a clean checkout (10 passed, 2 skipped — the skips need `dataset/`). `6_Code/` stays as frozen Round 1 provenance. **Deadline set to 30 Aug and the board triaged** — B and G are the only full builds, E drops to one view, C to a stub, D to two background runs, F is cut. | — |
 | 2026-08-27 | Sagar | **Full verification pass — all 9 carried defects worked through; test suite 12/12 green for the first time.** Root-caused #1 (wall-clock-indexed `z_fail` gated on `busy` → a 20% speed-up makes 11/20 stations lose cars; opt-in `crn_safe_failures=True` cuts it to 1/20). Fixed #4 (failed drift extrapolation out of the live path, buffer countdown in), #5 (real accumulating CUSUM, verified order-independent), #7 (**detector claimed 0.997 confidence at a 10.6% hit rate — ECE 0.454 → 0.074 after fitting**). **Rejected #6**: measured 4 down-weight variants on 319 blocks, all equal or worse — code was right, design note was wrong, note corrected. Verified #2 and #3 exactly as Priyansh stated. Closed #8 (re-ran eval clean, 958 blocks, numbers identical; stale log deleted). Did #9 (Wilson intervals on every rate) — **and it changed the story: McNemar says we are statistically TIED with active_period (p=0.45) and significantly beat utilisation (p=0.0025)**, so the "46 vs 43" framing retires entirely. Also found a **0.79-car label-noise floor** that makes top-1 a coin flip in ~50% of blocks, which is empirical support for the locked "regret not top-1" decision. All headline numbers re-verified unchanged after the fixes — nothing needs regenerating. | — |
