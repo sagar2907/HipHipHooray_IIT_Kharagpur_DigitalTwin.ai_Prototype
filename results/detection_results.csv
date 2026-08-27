@@ -1,0 +1,17 @@
+tool_id,condition,detector,onset_op,alarm_op,first_defect_op,sustained_defect_op,detect_delay,lead_vehicles,lead_vs_first_defect
+NR-07A,gradual_wear,Spec limit (current practice),3200,4188,4188,4415,988,227,0
+NR-07A,gradual_wear,Shewhart chart,3200,4188,4188,4415,988,227,0
+NR-07A,gradual_wear,EWMA,3200,4184,4188,4415,984,231,4
+NR-07A,gradual_wear,CUSUM,3200,4006,4188,4415,806,409,182
+NR-12B,gradual_wear,Spec limit (current practice),5100,5113,5113,6058,13,945,0
+NR-12B,gradual_wear,Shewhart chart,5100,5113,5113,6058,13,945,0
+NR-12B,gradual_wear,EWMA,5100,5864,5113,6058,764,194,-751
+NR-12B,gradual_wear,CUSUM,5100,5621,5113,6058,521,437,-508
+NR-18C,gradual_wear,Spec limit (current practice),2600,3488,3488,3623,888,135,0
+NR-18C,gradual_wear,Shewhart chart,2600,3549,3488,3623,949,74,-61
+NR-18C,gradual_wear,EWMA,2600,3251,3488,3623,651,372,237
+NR-18C,gradual_wear,CUSUM,2600,3011,3488,3623,411,612,477
+NR-22D,sudden_shift,Spec limit (current practice),6400,6418,6418,6400,18,-18,0
+NR-22D,sudden_shift,Shewhart chart,6400,6418,6418,6400,18,-18,0
+NR-22D,sudden_shift,EWMA,6400,6406,6418,6400,6,-6,12
+NR-22D,sudden_shift,CUSUM,6400,6405,6418,6400,5,-5,13

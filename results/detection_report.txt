@@ -1,0 +1,85 @@
+============================================================================
+DETECTOR CALIBRATION
+Thresholds chosen as the most sensitive setting raising NO ALARM
+across 35300 operations of healthy, in-control data.
+============================================================================
+  Spec limit (current practice)  n/a (tolerance band)
+  Shewhart chart                 threshold = 4.2
+  EWMA                           threshold = 4.5
+  CUSUM                          threshold = 8.5
+
+============================================================================
+LEAD TIME BEFORE SUSTAINED DEFECT PRODUCTION BEGINS
+Positive = warned this many vehicles early. 1 vehicle = 1 minute.
+============================================================================
+detector  Spec limit (current practice)  Shewhart chart   EWMA  CUSUM
+tool_id                                                              
+NR-07A                            227.0           227.0  231.0  409.0
+NR-12B                            945.0           945.0  194.0  437.0
+NR-18C                            135.0            74.0  372.0  612.0
+NR-22D                            -18.0           -18.0   -6.0   -5.0
+
+                               median lead (veh)   mean  worst  best
+detector                                                            
+Spec limit (current practice)              181.0  322.0    -18   945
+Shewhart chart                             150.0  307.0    -18   945
+EWMA                                       212.0  198.0     -6   372
+CUSUM                                      423.0  363.0     -5   612
+
+Detection delay after degradation truly begins (lower is better):
+                               mean ops after onset
+detector                                           
+Spec limit (current practice)                 477.0
+Shewhart chart                                492.0
+EWMA                                          601.0
+CUSUM                                         436.0
+
+----------------------------------------------------------------------------
+CUSUM warns a median 423 vehicles before sustained defects begin,
+and 463 vehicles before end-of-line testing would find it.
+At 60 JPH that is 463 minutes of warning, at a threshold raising
+no alarm on the 35300 calibration operations. NOTE: that is NOT a
+false-alarm rate - thresholds tuned until data is quiet will always be
+quiet on that data. Held-out rate is ~1 per 5 tool-weeks; see README.
+----------------------------------------------------------------------------
+
+chart written: drift_detection.png
+
+============================================================================
+REMAINING USEFUL LIFE  -  how the estimate converges
+Units are vehicles (= minutes). Fraction = how far from alarm to failure.
+============================================================================
+tool_id  frac  at_op  predicted  actual  abs_err  err_pct
+ NR-07A  0.00   4006       1715     409     1306      319
+ NR-07A  0.25   4108       2005     307     1698      553
+ NR-07A  0.50   4210       1527     205     1322      645
+ NR-07A  0.75   4312        913     103      810      786
+ NR-12B  0.00   5621       2781     437     2344      536
+ NR-12B  0.25   5730       1707     328     1379      420
+ NR-12B  0.50   5839       1460     219     1241      567
+ NR-12B  0.75   5948       1756     110     1646     1497
+ NR-18C  0.00   3011       1938     612     1326      217
+ NR-18C  0.25   3164       1029     459      570      124
+ NR-18C  0.50   3317        703     306      397      130
+ NR-18C  0.75   3470        683     153      530      347
+
+      median abs error (veh)  median error % of remaining
+frac                                                     
+0.00                  1326.0                        319.0
+0.25                  1379.0                        420.0
+0.50                  1241.0                        567.0
+0.75                   810.0                        786.0
+
+Reading this honestly. Absolute error does shrink as damage accumulates
+(the estimate sharpens), but it stays biased LONG throughout, because
+real degradation accelerates faster than the fitted curve. Percentage
+error rises only because the remaining horizon shrinks toward zero.
+
+Product conclusion: do NOT show operators a precise countdown - it
+would be systematically over-optimistic and would get someone burned.
+Alert on detection, which is reliable, and show a coarse band such as
+'hours, not minutes'. Prognosis is the weakest link in this pipeline
+and saying so is better than being caught claiming otherwise.
+
+The sudden-shift tool is excluded deliberately: no method can forecast
+a step change, and claiming otherwise would be dishonest.

@@ -53,15 +53,22 @@ FOLDER CONTENTS
   7_Prototype/          Round 2 prototype work.
 
 ===============================================================
-GETTING RUNNING
+GETTING RUNNING  — the code is IN THIS REPO as of 27 Aug
 ===============================================================
-  git clone https://github.com/sagar2907/HipHipHooray_DigitalTwin.ai.git
-  cd HipHipHooray_DigitalTwin.ai
   pip install numpy pandas matplotlib pytest
   python -m pytest tests/ -q
 
-  Expect 10 passed, 1 failed. The failure is known and diagnosed
-  in the guide (§5). It does NOT affect any published number.
+  Expect 10 passed, 2 skipped on a fresh clone. The 2 skips are
+  the leakage tests, which need dataset/ to exist - regenerate it
+  and they run too, giving 12/12.
+
+  src/     the live package (twin.plant, twin.detect, ...)
+  scripts/ generators and evaluations
+  tests/   12 invariant tests, all green as of 27 Aug
+  results/ measured outputs - every published number traces here
+
+  6_Code/digitaltwin_code_snapshot.zip is the FROZEN Round 1
+  snapshot, kept for provenance. Do not work in it - work in src/.
 
 ===============================================================
 IMPORTANT — THE DATASETS ARE NOT IN THE REPO

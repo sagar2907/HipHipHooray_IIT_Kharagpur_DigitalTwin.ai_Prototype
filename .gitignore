@@ -1,0 +1,23 @@
+# Generated datasets — regenerable from the seeded builders in scripts/.
+# ~765 MB of derived data; the generators are what needs versioning.
+dataset/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp

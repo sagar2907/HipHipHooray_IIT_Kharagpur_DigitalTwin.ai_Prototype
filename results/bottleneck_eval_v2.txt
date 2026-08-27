@@ -1,0 +1,19 @@
+               top-1  top-2  top-1 (visible only)
+method                                           
+active_period   15.0   25.1                  17.0
+utilisation     11.6   19.2                  13.1
+least_idle      11.6   19.2                  13.1
+
+method        active_period  least_idle  utilisation
+fault_kind                                          
+degrade_ramp           23.5        15.7         15.7
+degrade_step           17.6        11.8         11.8
+none                    7.6         9.3          9.3
+station_down           11.4         9.1          9.1
+
+method  active_period  least_idle  utilisation
+band                                          
+1                 7.4         6.5          6.5
+2                14.2        11.3         11.3
+3-4              19.3        14.1         14.1
+5+               31.8        22.7         22.7

@@ -1,0 +1,18 @@
+               top-1  top-2  top-1 (visible)  top-1 (dark)
+method                                                    
+active_period   95.2   95.2            100.0           0.0
+utilisation     95.2   95.2            100.0           0.0
+least_idle      95.2   95.2            100.0           0.0
+
+method        active_period  utilisation
+fault_kind                              
+degrade_ramp           95.2         95.2
+degrade_step           91.8         91.8
+none                   99.2         99.2
+station_down           93.2         93.2
+
+               switches  distinct  median_reign_min
+method                                             
+active_period       7.5       3.4              29.8
+utilisation         7.5       3.4              29.8
+least_idle          7.5       3.4              29.8

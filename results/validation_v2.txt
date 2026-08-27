@@ -1,0 +1,74 @@
+==============================================================================
+TELEMETRY V2 - held-out calibration, per-fault-type detectability
+==============================================================================
+CUSUM thresholds calibrated on held-out healthy set (12 tools x 12000 ops): torque=11.5, current=13.0
+False alarms on 8 healthy main-set tools (96,000 held-out ops): torque-CUSUM 0, current-CUSUM 2
+
+Warning lead before sustained defects, per tool (vehicles):
+condition      tool      torque-only  torque+current
+gradual_wear   NR-15I            277          FA-pre
+gradual_wear   NR-17J            567             574
+gradual_wear   NR-18K            309             309
+gradual_wear   NR-19L            346             346
+gradual_wear   NR-20M            274             274
+spread_only    NR-21N             61             475
+spread_only    NR-23O            -84             464
+spread_only    NR-24P            -28          FA-pre
+sudden_shift   NR-25Q             31              31
+sudden_shift   NR-30R             12              15
+sensor_bias    NR-31S            -79             303
+sensor_bias    NR-32T            -25             656
+overtorque     NR-35U            849             849
+overtorque     NR-36V            661             661
+intermittent   NR-37W           -800             290
+intermittent   NR-38X           -993             308
+
+Median lead by condition (vehicles; NaN = typically undetected):
+              lead_torque  lead_mv
+condition                         
+gradual_wear        309.0    328.0
+intermittent       -896.0    299.0
+overtorque          755.0    755.0
+sensor_bias         -52.0    480.0
+spread_only         -28.0    470.0
+sudden_shift         22.0     23.0
+
+==============================================================================
+LINE FLOW - conservation, KPIs, fault-vs-truth agreement
+==============================================================================
+ run_id   fault_kind fault_station  fault_onset_s  jph  truth_bneck_is_fault_station_post_onset
+      1 degrade_ramp           S20          13718 53.9                                    0.000
+      2 degrade_ramp           S15          10772 52.6                                    0.000
+      3 degrade_ramp           S19          15685 54.9                                    0.000
+      4 degrade_ramp           S09          10132 49.9                                    0.567
+      5 degrade_ramp           S07          10352 54.4                                    0.000
+      6 degrade_ramp           S08          15511 55.9                                    0.000
+      7 degrade_ramp           S12           6537 53.4                                    0.046
+      8 degrade_ramp           S04           6430 53.4                                    0.767
+      9 degrade_step           S07           8329 53.4                                    0.611
+     10 degrade_step           S09          15293 56.0                                    0.000
+     11 degrade_step           S14          15862 51.5                                    0.241
+     12 degrade_step           S10           6306 54.2                                    0.653
+     13 degrade_step           S14           7387 56.2                                    0.000
+     14 degrade_step           S17           8725 53.8                                    0.000
+     15 station_down           S09          13182 56.0                                    0.000
+     16 station_down           S06          11684 54.4                                    0.084
+     17 station_down           S12          14235 54.2                                    0.000
+     18 station_down           S09          15561 54.1                                    0.095
+     19 station_down           S04           7936 55.9                                    0.043
+     20 station_down           S06          11988 55.5                                    0.050
+     21         none           NaN             -1 56.5                                      NaN
+     22         none           NaN             -1 56.1                                      NaN
+     23         none           NaN             -1 57.4                                      NaN
+     24         none           NaN             -1 55.4                                      NaN
+     25         none           NaN             -1 56.6                                      NaN
+     26         none           NaN             -1 55.8                                      NaN
+     27         none           NaN             -1 56.4                                      NaN
+     28         none           NaN             -1 56.4                                      NaN
+
+JPH: no-fault mean 56.3 | fault mean 54.2
+run_01: 431 vehicles exited; all passed 20 stations: True
+run_10: 448 vehicles exited; all passed 20 stations: True
+run_21: 452 vehicles exited; all passed 20 stations: True
+
+validation complete.
