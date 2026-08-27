@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DigitalTwin.ai — Supervisor View</title>
+<style>
+/* ISA-101: grey base, colour ONLY for deviation. A well-designed plant HMI is
+   visually quiet during normal operation. If the screen is colourful, either
+   something is wrong or the designer has never stood on a plant floor. */
+:root{
+  --bg:#b8bcc0; --panel:#c9cdd1; --panel2:#d4d8db; --ink:#1b1e21;
+  --muted:#5a6067; --line:#9aa0a6;
+  --warn:#c8a415;      /* yellow  - warning        */
+  --alarm:#b3261e;     /* red     - alarm          */
+  --act:#1c5d99;       /* blue    - action needed  */
+  --ok:#3f6f3f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+     font:13px/1.45 "Segoe UI",Arial,sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:10px}
+
+header{display:flex;align-items:baseline;gap:16px;padding:8px 12px;
+       background:var(--panel);border:1px solid var(--line)}
+header h1{font-size:14px;margin:0;letter-spacing:.06em;font-weight:700}
+header .sub{color:var(--muted);font-size:11px}
+#clock{margin-left:auto;font:700 20px/1 Consolas,monospace}
+#status{font-size:11px;color:var(--muted)}
+
+.bar{height:3px;background:#9aa0a6;margin:0 0 10px}
+.bar>i{display:block;height:100%;background:#5a6067;width:0;transition:width .3s linear}
+
+.grid{display:grid;grid-template-columns:1.35fr 1fr;gap:10px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);padding:10px 12px;margin-bottom:10px}
+.card h2{font-size:11px;letter-spacing:.1em;color:var(--muted);
+         margin:0 0 8px;font-weight:700;text-transform:uppercase}
+
+/* the line */
+#line{display:flex;flex-wrap:wrap;gap:3px}
+.st{width:38px;height:30px;background:var(--panel2);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font:600 10px Consolas,monospace;color:var(--muted)}
+.st.constraint{background:var(--alarm);color:#fff;border-color:#7d1b15;font-weight:700}
+.st.forming{background:var(--warn);color:#241f00;border-color:#8d7410}
+.st.dark{background:repeating-linear-gradient(45deg,#b0b4b8,#b0b4b8 4px,#a5a9ad 4px,#a5a9ad 8px);
+         color:#6b7076}
+
+table{width:100%;border-collapse:collapse;font:12px Consolas,monospace}
+th{text-align:right;font:600 10px "Segoe UI",Arial;color:var(--muted);
+   text-transform:uppercase;letter-spacing:.06em;padding:3px 6px;
+   border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+td{padding:3px 6px;border-bottom:1px solid #b4b9bd}
+tr.top td{background:#c0c4c8;font-weight:700}
+tr.top td:first-child{box-shadow:inset 3px 0 var(--alarm)}
+
+.kv{display:flex;justify-content:space-between;padding:2px 0;
+    border-bottom:1px dotted #a8adb2}
+.kv b{font:700 12px Consolas,monospace}
+.big{font:700 26px/1.1 Consolas,monospace}
+.muted{color:var(--muted)}
+.tag{display:inline-block;padding:1px 6px;border:1px solid var(--line);
+     background:var(--panel2);font:600 10px Consolas,monospace;color:var(--muted)}
+.tag.warn{background:var(--warn);color:#241f00;border-color:#8d7410}
+.tag.act{background:var(--act);color:#fff;border-color:#134372}
+
+#presc{border-left:3px solid var(--act);padding-left:10px}
+#presc .action{font-size:14px;font-weight:700}
+#presc .because{color:var(--muted);font-size:11.5px;margin-top:2px}
+.advisory{margin-top:8px;padding:5px 8px;background:var(--panel2);
+          border:1px dashed var(--line);font-size:11px;color:var(--muted)}
+
+.alert{display:flex;gap:8px;align-items:center;padding:4px 0;
+       border-bottom:1px solid #b4b9bd;font-size:11.5px}
+.alert .st-id{font:700 11px Consolas,monospace;min-width:34px}
+.alert button{font:600 10px "Segoe UI";padding:2px 7px;cursor:pointer;
+              border:1px solid var(--line);background:var(--panel2);color:var(--ink)}
+.alert button:hover{background:#dfe3e6}
+.alert .done{font:600 10px Consolas,monospace;color:var(--ok)}
+.alert .done.over{color:var(--alarm)}
+footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>DigitalTwin.ai</h1>
+  <span class="sub" id="meta">loading…</span>
+  <span id="clock">--:--</span>
+</header>
+<div class="bar"><i id="prog"></i></div>
+
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>Assembly line — live</h2>
+      <div id="line"></div>
+      <div style="margin-top:8px" class="muted" id="legend">
+        <span class="tag" style="background:var(--alarm);color:#fff">constraint</span>
+        <span class="tag warn">forming</span>
+        <span class="tag">normal</span>
+        <span class="tag" style="background:repeating-linear-gradient(45deg,#b0b4b8,#b0b4b8 4px,#a5a9ad 4px,#a5a9ad 8px)">dark — no sensors</span>
+        &nbsp;· grey is normal by design (ISA-101)
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Evidence — why this station</h2>
+      <table>
+        <thead><tr><th>Station</th><th>Eff. CT</th><th>Proc</th><th>Avail</th>
+        <th>Blocked</th><th>Starved</th><th>CUSUM</th><th>n</th><th>Src</th></tr></thead>
+        <tbody id="rank"><tr><td colspan="9" class="muted">warming up…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <h2>Recommended action</h2>
+      <div id="presc"><div class="muted">waiting for first verdict…</div></div>
+      <div class="advisory">
+        <b>Advisory only.</b> The twin never writes to line control.
+        A person confirms every change.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Status</h2>
+      <div class="kv"><span>Constraint</span><b id="k-con">—</b></div>
+      <div class="kv"><span>Margin</span><b id="k-margin">—</b></div>
+      <div class="kv"><span>Confidence</span><b id="k-conf">—</b></div>
+      <div class="kv"><span>Cross-check</span><b id="k-cross">—</b></div>
+      <div class="kv"><span>Vehicles out</span><b id="k-out">0</b></div>
+      <div class="kv"><span>Constraint moved</span><b id="k-shifts">0×</b></div>
+      <div class="kv"><span>Loop latency</span><b id="k-ms">—</b></div>
+    </div>
+
+    <div class="card">
+      <h2>Forming next</h2>
+      <div id="forming" class="muted">none</div>
+    </div>
+
+    <div class="card">
+      <h2>Alert ledger — does the floor trust it?</h2>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+        <span class="big" id="prec">—</span>
+        <span class="muted" id="precsub">no calls scored yet</span>
+      </div>
+      <div id="alerts" class="muted">no alerts yet</div>
+    </div>
+
+    <div class="card">
+      <h2>Manual checklist stations</h2>
+      <div id="manual" class="muted">no manual-check entries in this window</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Replay of a recorded shift. The loop is causal — it never reads
+  <code>t &gt; now</code>. Confidence is an ordering score until calibrated;
+  the panel says which.
+</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let STATIONS = [], DARK = new Set(), META = null;
+
+fetch('/meta').then(r=>r.json()).then(m=>{
+  META = m; STATIONS = m.spine; DARK = new Set(m.dark);
+  $('meta').textContent =
+    `${m.run} · ${m.stations} stations, ${m.instrumented} instrumented, `
+    + `${m.dark.length} dark · replay ${m.speed}×`;
+  drawLine(null, []);
+});
+
+function drawLine(constraint, forming){
+  const f = new Set(forming.map(x=>x.station));
+  $('line').innerHTML = STATIONS.map(s=>{
+    let c = 'st', t = s;
+    if (DARK.has(s)) { c+=' dark'; t = s+' — no sensors (inferred from neighbours)'; }
+    else if (s===constraint) c+=' constraint';
+    else if (f.has(s)) c+=' forming';
+    return `<div class="${c}" title="${t}">${s.slice(1)}</div>`;
+  }).join('');
+}
+
+function renderAlerts(){
+  fetch('/alerts').then(r=>r.json()).then(list=>{
+    if(!list.length){ $('alerts').innerHTML='<span class="muted">no alerts yet</span>'; return; }
+    $('alerts').innerHTML = list.slice(-6).reverse().map(a=>{
+      const ctl = a.outcome==='pending'
+        ? `<button onclick="resolve(${a.i},'confirmed')">confirm</button>
+           <button onclick="resolve(${a.i},'overridden')">override</button>`
+        : `<span class="done ${a.outcome==='overridden'?'over':''}">${a.outcome}</span>`;
+      return `<div class="alert"><span class="st-id">${a.station}</span>
+        <span class="muted">${a.clock}</span>
+        <span style="flex:1">${a.detail}</span>${ctl}</div>`;
+    }).join('');
+  });
+}
+function resolve(i, outcome){
+  fetch(`/alert/${i}/${outcome}`,{method:'POST'}).then(r=>r.json()).then(d=>{
+    renderAlerts();
+    if(d.precision!=null){
+      $('prec').textContent = Math.round(d.precision*100)+'%';
+      $('precsub').textContent = `right on ${Math.round(d.precision*d.scored)} of the last ${d.scored} calls`;
+    }
+  });
+}
+
+const es = new EventSource('/stream');
+es.onmessage = ev => {
+  const f = JSON.parse(ev.data);
+  if (f.done){ $('status') && ($('status').textContent='shift complete'); es.close(); return; }
+
+  $('clock').textContent = f.clock;
+  $('prog').style.width = (f.progress*100)+'%';
+  $('k-out').textContent = f.units_out;
+  $('k-shifts').textContent = f.shifts_so_far + '×';
+  $('k-ms').textContent = f.compute_ms + ' ms';
+
+  drawLine(f.constraint, f.forming||[]);
+
+  if(!f.constraint){
+    $('rank').innerHTML = '<tr><td colspan="9" class="muted">warming up — not enough units to rank yet</td></tr>';
+    return;
+  }
+
+  $('k-con').textContent = f.constraint;
+  $('k-margin').textContent = f.margin + ' s';
+  $('k-conf').innerHTML = f.confidence +
+      ` <span class="tag">${f.confidence_is_calibrated?'calibrated':'ordering score'}</span>`;
+  $('k-cross').innerHTML = f.cross_check_agrees
+      ? '<span class="tag">agrees</span>'
+      : '<span class="tag warn">disagrees</span>';
+
+  $('rank').innerHTML = f.ranking.map((r,i)=>`
+    <tr class="${i===0?'top':''}">
+      <td>${r.station}</td><td>${r.effective_ct}</td><td>${r.proc_time}</td>
+      <td>${r.availability}</td><td>${r.blocked}</td><td>${r.starved}</td>
+      <td>${r.cusum}</td><td>${r.units}</td>
+      <td><span class="tag">${r.provenance}</span></td>
+    </tr>`).join('');
+
+  const p = f.prescription;
+  if(p){
+    $('presc').innerHTML = `
+      <div class="action">${p.station} — ${p.action}</div>
+      <div class="because">${p.because}</div>
+      <div style="margin-top:6px">
+        <span class="tag act">${p.signature}</span>
+        <span class="tag">margin ${p.margin_s}s</span>
+        ${p.next_best?`<span class="tag">next: ${p.next_best}</span>`:''}
+      </div>
+      <div class="because" style="margin-top:5px">basis: ${p.basis}</div>`;
+  }
+
+  $('forming').innerHTML = (f.forming&&f.forming.length)
+    ? f.forming.map(x=>`<div class="kv"><span>${x.station}</span><b>~${x.minutes} min</b></div>`).join('')
+    : '<span class="muted">none</span>';
+
+  const mc = f.manual_checks||[];
+  $('manual').innerHTML = mc.length
+    ? mc.map(m=>`<div class="kv"><span>${m.station} · ${m.reason||'check'}</span>
+        <b>${m.result} <span class="tag">${m.provenance}</span> +${m.latency_min}m</b></div>`).join('')
+      + `<div class="muted" style="margin-top:4px">${f.manual_check_count} entries this window · recorded late by design</div>`
+    : '<span class="muted">no manual-check entries in this window</span>';
+
+  if(f.ledger && f.ledger.precision!=null){
+    $('prec').textContent = Math.round(f.ledger.precision*100)+'%';
+    $('precsub').textContent = `right on ${f.ledger.confirmed} of ${f.ledger.scored} scored calls`;
+  } else if (f.ledger){
+    $('precsub').textContent = `${f.ledger.open} open · confirm or override to score them`;
+  }
+  if(f.t_s % 900 === 0) renderAlerts();
+};
+es.onerror = () => { $('meta').textContent += ' · stream lost'; };
+</script>
+</body>
+</html>

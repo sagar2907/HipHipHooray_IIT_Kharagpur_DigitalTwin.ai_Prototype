@@ -65,6 +65,10 @@ PAUSE_STATES = ("break",)
 
 WINDOW_S = 1800          # trailing observation window
 MIN_UNITS = 8            # below this the average is too noisy to rank on
+# Beyond about an hour a buffer countdown is extrapolation, not a warning:
+# it is past the point where the current slope is still the operative fact,
+# and a supervisor cannot act on it anyway.
+FORMING_HORIZON_MIN = 60
 
 
 # --------------------------------------------------------------------------
@@ -343,6 +347,13 @@ class Detector:
                 out.append((c.starves_station, int(round(c.minutes_to_full))))
             elif np.isfinite(c.minutes_to_empty):
                 out.append((c.blocks_station, int(round(c.minutes_to_empty))))
+        # A countdown longer than the horizon is arithmetic, not a warning. A
+        # buffer creeping up at 0.01 units/min yields "full in 576 minutes",
+        # which is past the end of the shift and past the point where the
+        # slope it was extrapolated from means anything. Emitting it would
+        # bury the real warnings - the alarm-flood failure mode the brief
+        # names, caused by us rather than by the plant.
+        out = [(s, m) for s, m in out if 0 < m <= FORMING_HORIZON_MIN]
         out.sort(key=lambda x: x[1])
         return out
 
