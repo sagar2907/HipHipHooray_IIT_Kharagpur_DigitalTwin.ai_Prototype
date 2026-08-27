@@ -27,3 +27,6 @@ desktop.ini
 # server scratch
 nohup.out
 /results/live/
+/results/twin.db
+/results/twin.db-wal
+/results/twin.db-shm

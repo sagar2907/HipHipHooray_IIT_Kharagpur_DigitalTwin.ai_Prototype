@@ -34,6 +34,7 @@ from twin.record import Recorder          # noqa: E402
 from twin.loop import TwinLoop            # noqa: E402
 from twin.genealogy import assess_all     # noqa: E402
 from twin.sink import LiveSink            # noqa: E402
+from twin.store import Store              # noqa: E402
 
 app = FastAPI(title="DigitalTwin.ai")
 STATE: dict = {}
@@ -62,55 +63,105 @@ def meta():
     })
 
 
+# --------------------------------------------------------------------------
+# The plant driver.
+#
+# This used to live inside /stream, which meant the line only ran while a
+# browser was attached: close the tab and the plant stopped, and nothing was
+# gathered. That is backwards. A plant does not stop because nobody is
+# looking at it, and the whole point of a long run is to accumulate evidence
+# whether or not anyone is watching.
+#
+# The driver now owns the loop and runs from server start to shutdown.
+# Viewers subscribe to a broadcast of whatever it is currently emitting, and
+# joining or leaving changes nothing about what is recorded.
+# --------------------------------------------------------------------------
+async def driver():
+    loop: TwinLoop = STATE["loop"]
+    store: Store = STATE["store"]
+    sink: LiveSink = STATE["sink"]
+    runs = STATE["runs"]
+    delay = loop.step_s / STATE["speed"]
+    i = 0
+    STATE["running"] = True
+
+    while STATE["running"]:
+        last = None
+        for frame in loop.frames():
+            if not STATE["running"]:
+                break
+            STATE["now_s"] = frame["t_s"]
+            STATE["constraint"] = frame.get("constraint")
+            STATE["latest"] = frame
+            last = frame
+
+            store.frame(frame)
+            store.alerts(loop.ledger, loop.shift_no, frame.get("run", ""))
+            sink.frame(frame)
+            sink.alerts(loop.ledger)
+
+            # periodic genealogy snapshot - tool health is slower-moving than
+            # flow, so sampling it every 30 simulated minutes is plenty and
+            # keeps the table small
+            if frame["t_s"] % 1800 == 0 and loop.rec.tools is not None:
+                try:
+                    rows = assess_all(loop.rec.tools, loop.rec.run.scans,
+                                      frame["t_s"], loop.rec.exit_station,
+                                      loop.rec.run.buffers,
+                                      frame.get("constraint"))
+                    store.tools(rows, frame["t_s"], loop.shift_no,
+                                frame.get("run", ""))
+                except Exception:
+                    pass        # a snapshot failing must never stop the plant
+
+            for q in list(STATE["subs"]):
+                if q.qsize() < 50:
+                    q.put_nowait(frame)
+            await asyncio.sleep(delay)
+
+        if last is not None:
+            store.shift(loop.shift_no, last.get("run", ""), last, loop.ledger)
+            sink.shift(loop.shift_no, last.get("run", ""), last, loop.ledger)
+
+        i += 1
+        if not STATE["continuous"] or i >= len(runs) * STATE["cycles"]:
+            STATE["running"] = False
+            break
+        nxt = runs[i % len(runs)]
+        loop.next_shift(Recorder.from_dir(nxt, i))
+        STATE["run_dir"] = nxt
+        marker = {"shift_change": True, "shift_no": loop.shift_no,
+                  "run": os.path.basename(nxt.rstrip("/\\"))}
+        STATE["latest"] = marker
+        for q in list(STATE["subs"]):
+            if q.qsize() < 50:
+                q.put_nowait(marker)
+
+
+@app.on_event("startup")
+async def _start_driver():
+    STATE["subs"] = set()
+    asyncio.create_task(driver())
+
+
 @app.get("/stream")
 async def stream():
-    """One frame per tick, paced to the requested replay speed."""
-    loop: TwinLoop = STATE["loop"]
-    speed: float = STATE["speed"]
-    delay = loop.step_s / speed
-    sink: LiveSink = STATE["sink"]
+    """Relay the driver's frames. Viewers are passive - joining or leaving
+    does not start, stop or rewind the plant."""
 
-    # One stream drives the loop. A page refresh opens a second connection to
-    # the SAME loop, which was double-advancing the shift counter and racing
-    # the ledger. The newest connection takes ownership and older ones retire.
-    STATE["gen"] = STATE.get("gen", 0) + 1
-    mine = STATE["gen"]
+    q: asyncio.Queue = asyncio.Queue()
+    STATE["subs"].add(q)
+    latest = STATE.get("latest")
 
     async def gen():
-        runs = STATE["runs"]
-        i = 0
-        while True:
-            last = None
-            for frame in loop.frames():
-                if STATE["gen"] != mine:
-                    return          # a newer viewer took over
-
-                # let /genealogy follow the replay clock, so the containment
-                # panel is causal too rather than jumping to end-of-shift
-                STATE["now_s"] = frame["t_s"]
-                STATE["constraint"] = frame.get("constraint")
-                last = frame
-                sink.frame(frame)
-                sink.alerts(loop.ledger)
+        try:
+            if latest:                       # don't make a new viewer wait
+                yield f"data: {json.dumps(latest)}\n\n"
+            while True:
+                frame = await q.get()
                 yield f"data: {json.dumps(frame)}\n\n"
-                await asyncio.sleep(delay)
-            if last is not None:
-                sink.shift(loop.shift_no, last.get("run", ""), last, loop.ledger)
-
-            i += 1
-            if STATE["gen"] != mine:
-                return
-            if not STATE["continuous"] or i >= len(runs) * STATE["cycles"]:
-                yield f"data: {json.dumps({'done': True})}\n\n"
-                return
-            # roll onto the next shift. The ledger carries; the shift-local
-            # state does not - see TwinLoop.next_shift.
-            nxt = runs[i % len(runs)]
-            loop.next_shift(Recorder.from_dir(nxt, i))
-            STATE["run_dir"] = nxt
-            marker = {"shift_change": True, "shift_no": loop.shift_no,
-                      "run": os.path.basename(nxt.rstrip("/\\"))}
-            yield f"data: {json.dumps(marker)}\n\n"
+        finally:
+            STATE["subs"].discard(q)         # the plant keeps running
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache",
@@ -152,11 +203,15 @@ def genealogy(at_s: int = 0):
 def recording():
     """What has been captured so far, without interrupting the run."""
     sink: LiveSink = STATE["sink"]
-    st = sink.status()
+    store: Store = STATE["store"]
+    st = {"database": store.status(), "jsonl": sink.status(),
+          "plant_running": STATE.get("running"),
+          "viewers": len(STATE.get("subs") or ()),
+          "current_shift": STATE["loop"].shift_no}
     d = os.path.join(HERE, "..", "results", "live")
     if os.path.isdir(d):
-        st["files"] = {f: os.path.getsize(os.path.join(d, f))
-                       for f in sorted(os.listdir(d))}
+        st["jsonl"]["files"] = {f: os.path.getsize(os.path.join(d, f))
+                                for f in sorted(os.listdir(d))}
     return JSONResponse(st)
 
 
@@ -241,9 +296,15 @@ def main():
         print("  calib : none — confidence will be labelled an ordering score")
     sink = LiveSink(os.path.join(HERE, "..", "results", "live"),
                     enabled=not a.no_record)
+    store = Store(os.path.join(HERE, "..", "results", "twin.db"),
+                  enabled=not a.no_record)
+    tl = TwinLoop(rec, step_s=a.step, calibration=cal)
+    sid = store.open_session(os.path.basename(a.run.rstrip("/\\")), a.speed,
+                             a.step, a.shifts != 1, cal, tl.base_rate)
     STATE.update(run_dir=a.run, speed=a.speed, step_s=a.step, sink=sink,
-                 loop=TwinLoop(rec, step_s=a.step, calibration=cal))
-    print(f"  record: {'-> results/live/ (frames, alerts, shifts)' if sink.enabled else 'disabled'}")
+                 store=store, loop=tl, latest=None, subs=set())
+    print(f"  record: {'results/twin.db + results/live/' if store.enabled else 'disabled'}"
+          f"{f'  (session {sid})' if sid else ''}")
 
     import uvicorn
     print(f"  run   : {a.run}")
