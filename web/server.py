@@ -68,15 +68,41 @@ async def stream():
     speed: float = STATE["speed"]
     delay = loop.step_s / speed
 
+    # One stream drives the loop. A page refresh opens a second connection to
+    # the SAME loop, which was double-advancing the shift counter and racing
+    # the ledger. The newest connection takes ownership and older ones retire.
+    STATE["gen"] = STATE.get("gen", 0) + 1
+    mine = STATE["gen"]
+
     async def gen():
-        for frame in loop.frames():
-            # let /genealogy follow the replay clock, so the containment
-            # panel is causal too rather than jumping to end-of-shift
-            STATE["now_s"] = frame["t_s"]
-            STATE["constraint"] = frame.get("constraint")
-            yield f"data: {json.dumps(frame)}\n\n"
-            await asyncio.sleep(delay)
-        yield f"data: {json.dumps({'done': True})}\n\n"
+        runs = STATE["runs"]
+        i = 0
+        while True:
+            for frame in loop.frames():
+                if STATE["gen"] != mine:
+                    return          # a newer viewer took over
+
+                # let /genealogy follow the replay clock, so the containment
+                # panel is causal too rather than jumping to end-of-shift
+                STATE["now_s"] = frame["t_s"]
+                STATE["constraint"] = frame.get("constraint")
+                yield f"data: {json.dumps(frame)}\n\n"
+                await asyncio.sleep(delay)
+
+            i += 1
+            if STATE["gen"] != mine:
+                return
+            if not STATE["continuous"] or i >= len(runs) * STATE["cycles"]:
+                yield f"data: {json.dumps({'done': True})}\n\n"
+                return
+            # roll onto the next shift. The ledger carries; the shift-local
+            # state does not - see TwinLoop.next_shift.
+            nxt = runs[i % len(runs)]
+            loop.next_shift(Recorder.from_dir(nxt, i))
+            STATE["run_dir"] = nxt
+            marker = {"shift_change": True, "shift_no": loop.shift_no,
+                      "run": os.path.basename(nxt.rstrip("/\\"))}
+            yield f"data: {json.dumps(marker)}\n\n"
 
     return StreamingResponse(gen(), media_type="text/event-stream",
                              headers={"Cache-Control": "no-cache",
@@ -158,11 +184,28 @@ def main():
     ap.add_argument("--step", type=int, default=300,
                     help="loop period in simulated seconds")
     ap.add_argument("--port", type=int, default=8000)
+    ap.add_argument("--shifts", type=int, default=1,
+                    help="how many consecutive shifts to replay; the alert "
+                         "ledger carries across them (Complexity 7: validated "
+                         "over time). 0 = run forever, cycling the runs.")
     a = ap.parse_args()
 
     if not os.path.isdir(a.run):
         sys.exit(f"run directory not found: {a.run}\n"
                  f"Point --run at a dataset run, e.g. dataset/v5/flow/runs/L1_run_001")
+
+    # consecutive shifts = consecutive runs in the same flow directory
+    parent = os.path.dirname(os.path.abspath(a.run))
+    first = os.path.basename(os.path.abspath(a.run))
+    prefix = first.rsplit("_run_", 1)[0] + "_run_" if "_run_" in first else ""
+    siblings = sorted(d for d in os.listdir(parent)
+                      if d.startswith(prefix)) if prefix else [first]
+    start = siblings.index(first) if first in siblings else 0
+    ordered = siblings[start:] + siblings[:start]
+    runs = [os.path.join(parent, d) for d in ordered]
+    STATE["runs"] = runs
+    STATE["continuous"] = (a.shifts != 1)
+    STATE["cycles"] = 10 ** 6 if a.shifts == 0 else max(1, a.shifts)
 
     rec = Recorder.from_dir(a.run, 0)
     cal = None
@@ -179,6 +222,8 @@ def main():
 
     import uvicorn
     print(f"  run   : {a.run}")
+    print(f"  shifts: {'continuous (cycling ' + str(len(runs)) + ' runs)' if a.shifts == 0 else a.shifts}"
+          f"  — ledger carries across shifts")
     print(f"  speed : {a.speed}x  ({rec.horizon_s / a.speed / 60:.1f} min for an "
           f"{rec.horizon_s / 3600:.0f} h shift)")
     print(f"  open  : http://127.0.0.1:{a.port}")

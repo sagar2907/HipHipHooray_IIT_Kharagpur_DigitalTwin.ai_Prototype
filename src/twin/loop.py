@@ -162,6 +162,7 @@ class TwinLoop:
         # completed constraint episodes, in seconds -> the persistence estimate
         self._episodes: list[float] = []
         self._episode_start: float | None = None
+        self.shift_no = 1
 
     # ------------------------------------------------------------- one tick
     def tick(self, t_s: float) -> dict:
@@ -195,6 +196,8 @@ class TwinLoop:
             "prescription": None,
             "manual_checks": [],
             "shifts_so_far": self._shifts,
+            "shift_no": self.shift_no,
+            "run": self.rec.run_dir.replace("\\", "/").rstrip("/").split("/")[-1],
             "ledger": {"precision": self.ledger.precision,
                        "confirmed": self.ledger.confirmed,
                        "scored": self.ledger.scored,
@@ -237,7 +240,14 @@ class TwinLoop:
                     "units": r.units,
                     "provenance": r.provenance,
                 } for r in verdict.ranking[:8]],
-                forming=[{"station": s, "minutes": m} for s, m in verdict.forming],
+                # A buffer countdown can name a station that has NO sensors at
+                # all - the slope either side is enough. Flag it, because
+                # "we just told you a dark station is about to constrain the
+                # line" is the sensor-coverage claim actually landing, not a
+                # footnote.
+                forming=[{"station": s, "minutes": m,
+                          "dark": s in set(self.rec.dark_stations)}
+                         for s, m in verdict.forming],
                 prescription=self._prescribe(verdict),
             )
             self._record_alerts(verdict)
@@ -440,6 +450,26 @@ class TwinLoop:
         start = self.step_s if start_s is None else start_s
         for t in range(start, self.rec.horizon_s + 1, self.step_s):
             yield self.tick(t)
+
+    # ------------------------------------------------------- multi-shift
+    def next_shift(self, recorder: Recorder) -> None:
+        """Roll onto the next shift, KEEPING the ledger.
+
+        Complexity 7 asks for predictive claims validated against real
+        outcomes *over time*. A single shift cannot answer that: running
+        precision only means something once it has survived several. So the
+        ledger, the confirmed/overridden counts and the calibration carry
+        across, while everything that is a property of one shift - the
+        constraint episode history, the warm-up, the last-alerted station -
+        resets, because carrying those between shifts would be wrong.
+        """
+        self.rec = recorder
+        self.shift_no += 1
+        self._prev_constraint = None
+        self._last_alert_station = None
+        self._episodes = []
+        self._episode_start = None
+        self._shifts = 0
 
 
 def _hhmm(t_s: float) -> str:

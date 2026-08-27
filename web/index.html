@@ -172,6 +172,7 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
       <div class="kv"><span>Margin</span><b id="k-margin">—</b></div>
       <div class="kv"><span>Confidence</span><b id="k-conf">—</b></div>
       <div class="kv"><span>Cross-check</span><b id="k-cross">—</b></div>
+      <div class="kv"><span>Shift</span><b><span id="shiftno">1</span> · <span id="runid">—</span></b></div>
       <div class="kv"><span>Vehicles out</span><b id="k-out">0</b></div>
       <div class="kv"><span>Constraint moved</span><b id="k-shifts">0×</b></div>
       <div class="kv"><span>Loop latency</span><b id="k-ms">—</b></div>
@@ -487,7 +488,15 @@ function renderGeno(){
 const es = new EventSource('/stream');
 es.onmessage = ev => {
   const f = JSON.parse(ev.data);
-  if (f.done){ $('status') && ($('status').textContent='shift complete'); es.close(); return; }
+  if (f.done){ $('meta').textContent += ' · replay complete'; es.close(); return; }
+  if (f.shift_change){
+    // ledger and calibration persist across shifts; shift-local state resets
+    $('meta').textContent = `${f.run} · shift ${f.shift_no} · ledger carries over`;
+    renderAlerts(); renderGeno();
+    return;
+  }
+  if (f.shift_no) $('shiftno').textContent = f.shift_no;
+  if (f.run) $('runid').textContent = f.run;
 
   $('clock').textContent = f.clock;
   $('prog').style.width = (f.progress*100)+'%';
@@ -534,7 +543,9 @@ es.onmessage = ev => {
   }
 
   $('forming').innerHTML = (f.forming&&f.forming.length)
-    ? f.forming.map(x=>`<div class="kv"><span>${x.station}</span><b>~${x.minutes} min</b></div>`).join('')
+    ? f.forming.map(x=>`<div class="kv"><span>${x.station}${
+        x.dark?' <span class="tag act" title="no sensors at this station — inferred from buffer slope either side">DARK · inferred</span>':''
+      }</span><b>~${x.minutes} min</b></div>`).join('')
     : '<span class="muted">none</span>';
 
   const mc = f.manual_checks||[];
