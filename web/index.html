@@ -199,6 +199,16 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
     </div>
 
     <div class="card">
+      <h2>Tool health &amp; genealogy containment</h2>
+      <p class="muted" style="margin:0 0 6px;font-size:11px">
+        A defect found late has already been built into every car since it
+        started. Onset is read backwards off the CUSUM accumulator, then the
+        VIN thread says exactly which vehicles carry it — and where they are.
+      </p>
+      <div id="geno" class="muted">waiting for tool telemetry…</div>
+    </div>
+
+    <div class="card">
       <h2>Manual checklist stations</h2>
       <div id="manual" class="muted">no manual-check entries in this window</div>
     </div>
@@ -426,6 +436,54 @@ function renderRollup(){
     </tbody></table>`;
 }
 
+const CLS = {
+  wear:              {tag:'alarm', label:'REAL WEAR'},
+  sensor:            {tag:'act',   label:'SENSOR LYING'},
+  mechanical_change: {tag:'warn',  label:'EARLY MECHANICAL'},
+  unclear:           {tag:'',      label:'UNCLEAR'},
+  healthy:           {tag:'',      label:'healthy'},
+};
+
+function renderGeno(){
+  fetch('/genealogy').then(r=>r.json()).then(d=>{
+    if(!d.available){ $('geno').innerHTML=`<span class="muted">${d.reason}</span>`; return; }
+    const alarms = d.tools.filter(t=>t.alarm);
+    if(!alarms.length){
+      const n = d.tools.length;
+      $('geno').innerHTML = `<span class="muted">${n} tools monitored · no accumulated drift yet</span>`;
+      return;
+    }
+    $('geno').innerHTML = alarms.map(t=>{
+      const c = CLS[t.classification]||CLS.unclear;
+      const ct = t.containment, sc = t.stop_or_continue;
+      const chans = Object.entries(t.channels||{})
+        .map(([k,v])=>`${k} <code>${v>0?'+':''}${v}σ</code>`).join(' · ');
+      return `<div style="border-top:1px solid var(--line);padding:6px 0">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <b style="font:700 12px Consolas,monospace">${t.station}</b>
+          <span class="tag ${c.tag==='alarm'?'':c.tag}"
+            ${c.tag==='alarm'?'style="background:var(--alarm);color:#fff"':''}>${c.label}</span>
+          <span class="muted" style="font-size:10.5px">CUSUM ${t.cusum}</span>
+        </div>
+        <div style="font-weight:700;margin-top:3px">${t.action}</div>
+        <div class="muted" style="font-size:11px">${t.why}</div>
+        <div class="muted" style="font-size:10.5px;margin-top:3px">${chans}</div>
+        ${ct?`<div style="margin-top:5px;font-size:11px">
+          <b>${ct.total} vehicles</b> through since onset
+          ${ct.bands.map(b=>`<div class="kv" style="font-size:11px">
+            <span>${b.band}</span><b>${b.n}</b></div>`).join('')}
+        </div>`:''}
+        ${sc?`<div style="margin-top:5px;padding:4px 6px;background:var(--panel2);
+              border-left:3px solid var(--act);font-size:11px">
+          <b>${sc.decision}</b>
+          <div class="muted" style="font-size:10.5px">${sc.why}</div>
+          <div class="muted" style="font-size:10px;margin-top:2px">${sc.note}</div>
+        </div>`:''}
+      </div>`;
+    }).join('');
+  });
+}
+
 const es = new EventSource('/stream');
 es.onmessage = ev => {
   const f = JSON.parse(ev.data);
@@ -492,7 +550,7 @@ es.onmessage = ev => {
   } else if (f.ledger){
     $('precsub').textContent = `${f.ledger.open} open · confirm or override to score them`;
   }
-  if(f.t_s % 900 === 0) renderAlerts();
+  if(f.t_s % 900 === 0){ renderAlerts(); renderGeno(); }
 };
 es.onerror = () => { $('meta').textContent += ' · stream lost'; };
 </script>

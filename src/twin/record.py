@@ -43,6 +43,7 @@ class Recorder:
     run: Run
     run_dir: str = ""
     manual: pd.DataFrame | None = None     # manual_check.csv, when present
+    tools: pd.DataFrame | None = None      # tool_readings.csv, when present
 
     # ------------------------------------------------------------------ load
     @classmethod
@@ -53,7 +54,11 @@ class Recorder:
         mp = os.path.join(run_dir, "manual_check.csv")
         if os.path.exists(mp):
             manual = pd.read_csv(mp)
-        return cls(run=run, run_dir=run_dir, manual=manual)
+        tools = None
+        tp = os.path.join(run_dir, "tool_readings.csv")
+        if os.path.exists(tp):
+            tools = pd.read_csv(tp)
+        return cls(run=run, run_dir=run_dir, manual=manual, tools=tools)
 
     # ------------------------------------------------------------------ view
     def view_at(self, t_s: float) -> Run:

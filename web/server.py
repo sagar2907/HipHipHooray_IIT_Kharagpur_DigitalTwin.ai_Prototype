@@ -32,6 +32,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "src"))
 
 from twin.record import Recorder          # noqa: E402
 from twin.loop import TwinLoop            # noqa: E402
+from twin.genealogy import assess_all     # noqa: E402
 
 app = FastAPI(title="DigitalTwin.ai")
 STATE: dict = {}
@@ -69,6 +70,10 @@ async def stream():
 
     async def gen():
         for frame in loop.frames():
+            # let /genealogy follow the replay clock, so the containment
+            # panel is causal too rather than jumping to end-of-shift
+            STATE["now_s"] = frame["t_s"]
+            STATE["constraint"] = frame.get("constraint")
             yield f"data: {json.dumps(frame)}\n\n"
             await asyncio.sleep(delay)
         yield f"data: {json.dumps({'done': True})}\n\n"
@@ -88,6 +93,25 @@ def resolve(index: int, outcome: str):
     loop.resolve(index, outcome)
     return JSONResponse({"ok": True, "precision": loop.ledger.precision,
                          "scored": loop.ledger.scored})
+
+
+@app.get("/genealogy")
+def genealogy(at_s: int = 0):
+    """Tool health, containment lists, and the stop-or-continue call.
+
+    Causal: nothing past `at_s` is read. Defaults to the loop's current time
+    so the panel tracks the replay.
+    """
+    loop: TwinLoop = STATE["loop"]
+    rec = loop.rec
+    if rec.tools is None or rec.tools.empty:
+        return JSONResponse({"available": False,
+                             "reason": "this run has no tool telemetry"})
+    t = at_s or STATE.get("now_s") or rec.horizon_s
+    rows = assess_all(rec.tools, rec.run.scans, t, rec.exit_station,
+                      rec.run.buffers, STATE.get("constraint"))
+    return JSONResponse({"available": True, "at_s": int(t),
+                         "exit_station": rec.exit_station, "tools": rows})
 
 
 @app.get("/rollup")
