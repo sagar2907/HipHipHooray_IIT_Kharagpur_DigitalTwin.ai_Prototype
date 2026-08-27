@@ -197,3 +197,13 @@ The 2 skips are leakage tests needing `dataset/`, which is gitignored and
 regenerable: `python scripts/build_v5.py` then
 `python scripts/build_truth.py --workers 10` (~2–3 h). All seeded — identical
 bytes on both machines.
+
+**This was verified by fresh clone on 28 Aug 02:40**, not assumed: every file
+listed above is present in a clean checkout and the suite runs. Two bugs were
+found and fixed in the process — the v5 dataset documentation had never been
+in the repo (it sat inside gitignored `dataset/`), and the fix for that was
+itself being swallowed by the same rule, because a bare `dataset/` pattern
+matches at any depth. Both are corrected; the ignore is now root-anchored.
+
+**Keep the habit:** before any handover, clone to a temp directory and run the
+tests. Neither of those bugs was visible from the machine that created them.

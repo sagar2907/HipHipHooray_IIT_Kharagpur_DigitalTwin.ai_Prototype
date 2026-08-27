@@ -73,6 +73,7 @@ recording. **Design is 100% done; the build is 0%.**
 | 2026-08-27 | Accepted both Complexity 1 schema proposals (`manual_check`, `attested`); drafted 40-station segmented layout (L5) locally, calibrated against real Bosch/AI4I2020/SECOM data — **not pushed, review pending** | Sagar | `review` |
 | 2026-08-27 | **Verification pass — 9/9 defects worked through, suite 12/12 green.** Confidence miscalibration and the CRN failure-desync both found and fixed | Sagar | `done` |
 | 2026-08-27 | Live code moved into this repo; deadline set to 30 Aug; board triaged; **B de-risked — engine is causal and 800x faster than the gate needs** | Sagar | `done` |
+| **08-28 02:40** | **`PLAN.md` written; dataset docs rescued from gitignore; handover verified by fresh clone.** Repo confirmed complete and runnable from Priyansh's side | Sagar | `done` |
 | **08-28 01:09** | **Recommendation layer folded into beat 4; case retrieval deferred to Round 3.** Slice window of 27 Aug elapsed unbuilt — **2 days + submission morning left** | Sagar | `done` |
 | **08-28 night** | **B** — the loop: `record.py`, `loop.py`, SSE, ugly page | Sagar | `todo` |
 | **08-28** | **D** — transfer runs launched in background; L5 dark-ratio fix; truth build | Priyansh | `todo` |
@@ -272,6 +273,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| **08-28 02:40** | Sagar | **Verified the handover from Priyansh's side, not mine — two silent repo bugs found and fixed.** (1) The four dataset READMEs were invisible because they sat inside gitignored `dataset/`; **`v5/README.md` — the whole primary dataset's documentation — had never been in the repo at all.** Rescued to `docs/dataset/`. (2) **The rescue nearly failed identically**: a bare `dataset/` in `.gitignore` matches that directory name at *any depth*, so it silently swallowed `docs/dataset/` too. Anchored to `/dataset/`. **Both fixes verified in both directions** — planted a fake `dataset/v5/flow/unit_scan.csv` and confirmed git still ignores it (the 765 MB cannot be committed by accident) while `docs/dataset/` stays tracked. (3) **Fresh-clone test**: cloned the repo to a temp dir as Priyansh would — all key files present, `pytest` gives 10 passed / 2 skipped, AI-reference scan clean apart from the deliberate `claude-opus-5` API choice. (4) **Diffed both repos**: no code drift, the prototype repo carries the latest `detect.py`/`plant.py`/`layouts.py`. **Lesson generalised into the working agreement below** — neither bug was findable from this machine, because both were about what *someone else* receives. | — |
 | **08-28 02:20** | Sagar | **`PLAN.md` created + rescued four dataset docs that were invisible to Priyansh.** (1) **`PLAN.md`** — standalone final-submission plan: PS coverage matrix, the 7 demo beats, hour-blocked day plan to the 31st, the two open forks, cut order, and what is already in the bank. (2) **Found four dataset READMEs trapped under `.gitignore`** (`dataset/` is ignored, so `v5/README.md` — the primary dataset's entire documentation — had never been visible to Priyansh). Rescued to **`docs/dataset/`** as v2/v3/v5/v6_segmented. Two of them carried AI-provenance notes; **removed per the standing rule**, replaced with factual status sections. (3) Added **`scripts/verify_rank_variants.py`** and **`scripts/verify_calibration.py`** — the evidence behind rejecting defect #6 and fixing #7, now re-runnable by either of us and made path-portable. | — |
 | **08-28 01:40** | Sagar | **Named it: the PRESCRIPTIVE LAYER. Deck framing becomes "detect → predict → prescribe".** Placed on the standard analytics ladder (descriptive → diagnostic → predictive → prescriptive): detection is diagnostic, buffer countdown is predictive, ranking actions by cars-gained is prescriptive. Technical name in docs: *counterfactual intervention ranking*. **Why this is a strength and not a rebrand:** almost everyone claiming "prescriptive" has a rules table underneath; we have measured treatment effects under paired CRN, so "we re-ran the line with that station 20% faster and counted the cars" is an answer no other team can give. **LLM: approved, in a strictly bounded role — "the engine decides, the LLM only speaks."** It phrases the verdict object into plain English and writes shift-handover summaries; it never produces a number, invents an action, or reorders the ranking. Model `claude-opus-5` at low effort with a cached system prompt; cost measured at **~$0.15 per demo run** (~20 alerts), so cost is not a factor. **Two risks logged:** (1) live network dependency could stall the demo — pre-generate phrasings during replay, cache them, keep a template fallback so the page never blocks on a call; (2) a hallucinated number would undercut the calibration story that is currently our strongest asset, so the constraint must be stated out loud in the deck. **Strictly beat-4 polish — does not happen unless `loop.py` runs first.** | — |
 | **08-28 01:09** | Sagar | **Recommendation layer: decided IN. Case retrieval: deferred to Round 3.** Sagar proposed a RAG pipeline — a store of remediation techniques plus past-bottleneck history — so the twin suggests a fix, not just a finding. Assessment: (a) **it is not RAG**, there is no LLM and no generation; naming it RAG would be the same class of overclaim as the 46/58 attribution we just spent two days killing — it is a decision layer over a counterfactual engine. (b) **We have already measured "what should I do" three times and never surfaced any of it**: sensitivity under paired CRN (which station, worth how many cars), tool-fault classification (recalibrate vs replace — *opposite* correct actions), and `truth/intervention.csv` (fix now vs at the break). So the gap is presentation, not machinery. (c) A small library mapping our **own simulated fault classes** (`degrade_ramp`, `station_down`, `material_starvation`, `quality_hold`, blocked-upstream, micro-stops) to standard responses is defensible and ~2 h of writing — not invented domain knowledge. (d) **Case retrieval is cut**: the system has never run, so there is no case history; retrieval over an empty base is theatre and seeding it synthetically would force us either to label a stub or to hide one. Becomes strong in Round 3 once the ledger holds real history. **Test applied: does it need data we do not already have? If yes, it is Round 3.** | — |
@@ -468,6 +470,21 @@ Add the moment something stops you — don't wait for the checkpoint.
 - **Every number** is either ours with a named source file, or literature with a named
   reference. Otherwise it doesn't appear.
 - **Negative results get equal prominence.** It's our strongest asset in a mentored Round 3.
+- **Check the repo from the OTHER person's side before any handover.** Twice on
+  08-28 something was invisible to the teammate while looking fine locally — the
+  v5 dataset documentation was never in the repo, and the fix for it was itself
+  swallowed by the same ignore rule. Neither was findable from the machine that
+  wrote them. The only reliable test is a fresh clone:
+
+  ```bash
+  git clone <url> /tmp/check && cd /tmp/check && python -m pytest tests/ -q
+  ```
+
+  Expect **10 passed, 2 skipped** (the skips need `dataset/`, which is
+  regenerable). Run this before saying "pushed" on anything that matters.
+- **Documentation never lives inside a gitignored data directory.** Docs go in
+  `docs/`. `.gitignore` patterns are root-anchored (`/dataset/`, not `dataset/`)
+  because the bare form matches at every depth.
 
 ---
 
