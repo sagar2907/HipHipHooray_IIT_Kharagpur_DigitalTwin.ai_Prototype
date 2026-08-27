@@ -1036,12 +1036,69 @@ report what changed. We have been wrong twice: the shift calendar looked cosmeti
 turned out to be the only thing that drains a backlog, and the material lot table looked like
 flavour until it produced 21 simultaneous alarms.
 
-### C1.6 What this closes
+### C1.6 The five in brackets are examples, not a list
+
+**The signals that matter differ per station.** Torque is meaningless at a paint booth; weld
+resistance is meaningless at a manual clip station. So how do we configure this without
+hand-tuning 40 stations? Three levels, and only one is real work.
+
+**Level 1 — the primary signal is DECLARED, not discovered.** It is a fact from engineering,
+already in the part master and quality plan because the plant needs it to inspect anything at
+all: *"this joint must be torqued to 45 Nm ± 4"* makes torque the primary channel there by
+definition. We read it; we don't infer it.
+
+| Station type | Primary | From |
+|---|---|---|
+| Nutrunner | torque | part master / quality plan |
+| Spot weld | weld resistance | weld schedule |
+| Press-fit | force | process spec |
+| Paint booth | film thickness | paint spec |
+| Manual clip | *none — no spec channel* | — |
+
+**Level 2 — supporting signals are learned per equipment FAMILY, not per station.** Which
+other channels move when the primary degrades is a genuine measurement, but it is made once
+per family. All 40 nutrunners behave alike.
+
+```
+family: nutrunner      primary torque
+                       secondaries angle, motor current, cycle time
+                       environmental ambient temp
+family: spot weld      primary weld resistance
+                       secondaries current, voltage, electrode force, cycle time
+                       environmental coolant temp, ambient
+```
+
+**A 40-station line typically has 5–6 equipment families**, so this is five or six entries,
+not forty. That is the whole reason it scales. An uncharacterised family starts on **cycle
+time only** (which works everywhere), is flagged *"family not yet characterised"*, and gets
+characterised once a few faults have been seen — degrading gracefully rather than failing.
+
+**Level 3 — usefulness is measured per station instance.** A channel can exist and still carry
+nothing here. Test: plot its distribution healthy vs faulty at this station; if they overlap,
+drop it from this station's health score. A histogram, nothing more.
+
+> **Declared → learned per family → measured per instance.** Nobody hand-configures 40 stations.
+
+**Not all stations are equally informative, either.** A richly instrumented station in a
+well-buffered stretch may tell us little; a sparse one at a choke point may tell us a lot.
+Station **information value** depends on how often it constrains, how many dark stations it can
+inspect (the coupling map), and how long its blind window is (the detection horizon). It ranks
+both *where to look first* and *where to add sensors*.
+
+**New artifact needed:** a **channel role registry** — 5–6 entries, one per equipment family.
+Nothing else changes, because the detector never looks at what a channel physically measures.
+It compares each channel to **its own healthy baseline** and reduces it to a dimensionless
+number — so a weld resistance drifting 2σ and a booth humidity drifting 2σ are literally the
+same feature. **The answer to "every station has different signals" is: yes, and after
+normalisation the detector never finds out.**
+
+### C1.7 What this closes
 
 | Brief clause | Covered |
 |---|---|
 | Solutioning 1 — modelling approach, represent vs infer | ✅ fully |
 | Solutioning 1 — *"especially at sensor-poor stations"* | ✅ the doors/room split |
+| Solutioning 1 — the bracketed list as examples, not a spec | ✅ declared / family / instance |
 | Complexity 1 — inconsistent coverage | ✅ reinforces Part A |
 
 ---
