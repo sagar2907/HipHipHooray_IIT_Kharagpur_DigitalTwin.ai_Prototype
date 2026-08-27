@@ -52,6 +52,7 @@
 | 2026-08-27 | **Solution 3 answered** — data gaps + the low-cost sensing menu | Priyansh | `done` |
 | 2026-08-27 | **Solution 6 answered** — the ROI value model | Priyansh | `done` |
 | 2026-08-27 | **DESIGN PHASE CLOSED** — 7/7 complexities, 6/6 solutioning areas | Priyansh | `done` |
+| 2026-08-27 | Accepted both Complexity 1 schema proposals (`manual_check`, `attested`); drafted 40-station segmented layout (L5) locally, calibrated against real Bosch/AI4I2020/SECOM data — **not pushed, review pending** | Sagar | `review` |
 | _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
 | _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
@@ -67,15 +68,17 @@ Move the `▲` marker as workstreams complete. Fill the `_tbd_` dates once the d
 
 ## Right now
 
-_Last updated: 2026-08-25 by **Priyansh**_
+_Last updated: 2026-08-27 by **Sagar**_
 
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
-| **Sagar** | reviewed repo + Priyansh's audit; filed `suggestion_by_sagar/`; **B (the loop)** not yet started | — | — | — |
+| **Sagar** | Built a local draft of the 40-station segmented layout (L5) + `dataset/v6_segmented/` toward Workstream D — see Work log for full detail. Not pushed. **B (the loop)** still not started | — | — | — |
 | **Priyansh** | **Design closed — 7/7 complexities, 6/6 solutioning areas.** Starting **Workstream A (clear the ground)**, then the two transfer experiments that need no new code | `main` | — | — |
 
-**Sagar — two schema decisions waiting on you** in Part A of my suggestions file: a
-`manual_check` event type, and a fourth provenance value `attested`. Both touch `record.py`.
+**Priyansh — Sagar's schema decisions from Part A are made**: both `manual_check` and
+`attested` accepted, with a concrete build against them now sitting locally (Work log
+2026-08-27) — review whenever you get to Workstream D, happy to throw it away if it doesn't
+match what you already had planned.
 
 **Next joint checkpoint:** _(set a date)_
 
@@ -90,6 +93,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-27 | Sagar | **Accepted both Complexity 1 schema proposals** (`manual_check` event type, `attested` provenance). Researched real manufacturing datasets for calibration reference (Bosch: 51 stations/4 lines/0.58% defect rate; PyScrew: 34k real screw-driving ops, 27 fault types; downloaded SECOM — 4.54% real missing-sensor rate, 116/590 dead columns; downloaded AI4I2020 — 3.39% real machine-failure rate, used to set `manual_check`'s baseline NOK rate). Drafted a **40-station segmented layout (L5: 15 body/10 paint/15 final)** as an additive, opt-in extension to `layouts.py`/`plant.py` — confirmed L1-L4 byte-identical via `pytest` (same 10 passed/1 known-failed as before). New script `build_v6_segmented.py` generates `dataset/v6_segmented/` (20 runs): segment-conditioned sensor coverage (body 12% dark, paint 90% dark with 1 booth-aggregate survivor, final 58% dark), `manual_check.csv`, `coupling_map.csv`, vintage axis. Known limitation stated plainly: paint's batch/oven behaviour is approximated with larger buffers, not a true batch mechanic — flagged as follow-up, not attempted, to avoid risking simulator correctness on a local draft. **Nothing pushed** — `layouts.py`/`plant.py` are Priyansh's files and this is his Workstream D; built as a concrete proposal for him to review, adopt, or discard. | — |
 | 2026-08-27 | Priyansh | **Solution 6 (ROI) written up — DESIGN PHASE CLOSED.** Four value sources traced to measured outputs; the *realization factor* (action rate x effectiveness) stated rather than silently set to 1.0, and both are measurable; one assumptions table so a challenger changes a cell rather than dismissing the case. Key finding: **we have done the counting, not the pricing** — every line has a quantity and no rupee figure. Also: don't lead with the 670-cars line, lead with CONWIP (zero capex) and false rejections (plant-verifiable). | — |
 | 2026-08-27 | Priyansh | **Solution 3 written up** — the low-cost sensing menu the brief explicitly invites and we had never answered. Seven devices ranked by value per rupee, all mounting externally so none touches a PLC. Two findings: the **barcode reader is the highest-value device and measures nothing** (one reader inside a dark block splits it into two easier problems — buying resolution, not measurement), and **flow sensors and defect sensors belong in different places**, so we produce two lists and merge them. Cost bands need sourcing. | — |
 | 2026-08-25 | Priyansh | **Solution 2 written up** — predictive techniques + validation. Maps each technique to its job *and its explicit non-use*: SPC and anomaly detection can never find a bottleneck because **the bottleneck isn't broken, it's just slowest**. New artifact: a **validation ladder** (levels 0-6) with an honest placement of every capability we hold — including overtake risk at level 5, where it failed and was killed. Adds the rule that kill criteria are written *before* measuring. | — |

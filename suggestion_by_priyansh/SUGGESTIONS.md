@@ -24,7 +24,9 @@ Sagar agrees.
 > inconsistent — some stations are richly instrumented, others rely entirely on manual
 > checklists."*
 
-**Status:** `open` — needs Sagar's review. Touches `record.py` (provenance) and the shared event schema.
+**Status:** `accepted` (2026-08-27, Sagar) — both schema proposals (`manual_check`, `attested`)
+built against in a local draft of the 40-station segmented layout, see `PROGRESS.md` Work log
+2026-08-27. Not pushed — flagged for your review since `layouts.py`/`plant.py` are Workstream D.
 
 ### 1.1 The reality this has to work against
 
