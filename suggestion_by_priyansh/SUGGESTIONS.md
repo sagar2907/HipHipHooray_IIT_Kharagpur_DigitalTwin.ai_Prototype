@@ -772,6 +772,145 @@ Same drop in score, completely different problem and completely different fix. R
 
 ---
 
+## Complexity 7 — Validation over time, and floor trust
+
+> *"Predictive claims must be validated against real outcomes over time — false alarms about
+> defects that don't materialise can erode floor-level trust in the system quickly."*
+
+**Status:** `open` — needs Sagar's review. The ledger is Workstream C (his); the override and
+abstention display are Workstream E (joint).
+
+We are strongest here — held-out calibration, firewall set, economic ground truth, negatives
+reported at equal prominence. But note the two words doing the work: **"over time."**
+Everything we have validates at a *point* in time on a *fixed* dataset. Continuous validation
+in production is a different problem, and it is the half we haven't built.
+
+### 7.1 The label delay problem
+
+Truth does not arrive when the alert does. It arrives in three waves, so the ledger always
+holds **pending** entries and precision must be reported **per tier**:
+
+| Tier | Label source | Delay |
+|---|---|---|
+| Immediate | Supervisor confirms / overrides | minutes |
+| Short | EOL test result | ~40 min |
+| Long | Warranty / field failure | months |
+
+"We're 70% accurate" without naming the tier is meaningless, and it is the commonest way this
+number gets quietly inflated.
+
+### 7.2 The override button is our fastest label source
+
+This reframes what it is for. **It is not a courtesy to the operator — it is our primary data
+collection mechanism**, and the only label that arrives in minutes rather than months.
+
+Therefore: **one click** or it won't be used; capture *why* (wrong station / not worth it /
+already knew / it's fine); and never discard overrides — a system that throws them away is
+discarding its best feedback.
+
+### 7.3 Rolling calibration, and monitoring the monitor
+
+Recompute the reliability diagram on a **trailing window**, not once — a detector calibrated
+in August is not necessarily calibrated in November after a changeover or a tooling swap.
+
+And watch our own precision over time. If it falls from 70% to 45% across three months,
+nobody would notice. We already built twin drift for the model; this is the same idea for the
+detector. **A system whose performance silently degrades is worse than no system, because
+people still trust it.**
+
+### 7.4 Trust is asymmetric — precision dominates recall for adoption
+
+One false alarm costs far more than one true alarm gains. A supervisor remembers the wasted
+walk; the useful call becomes background. A missed detection is *invisible* — they never knew
+it existed. A false alarm is visible and irritating.
+
+This conflicts with the safety view where recall matters, and the resolution is a principle
+we already half-have as two separate mechanisms:
+
+> **Separate "what we detected" from "what we tell you." Detect everything. Alert on little.
+> Log the rest.**
+
+That is the suppress-without-evidence rule plus the persistence filter, stated as one idea.
+
+### 7.5 The ledger is how trust *recovers*, not just how it's measured
+
+The point most easily missed. **Without a ledger, lost trust cannot be regained** — one bad
+week becomes a permanent impression because there is no counter-evidence, only a feeling that
+the thing cries wolf.
+
+With **"right on 24 of the last 34 calls"** on screen, the supervisor recalibrates against
+data instead of memory. That is why the ledger belongs on the supervisor view permanently
+rather than in a monthly report.
+
+### 7.6 Silence must be visible
+
+On 35.7% of blocks no station dominates, and a system that stays quiet there is **behaving
+correctly**. But a blank screen reads as *broken*. So abstention is displayed explicitly —
+*"Monitoring. Nothing dominates — the line is balanced."* — or correct behaviour looks like a
+fault and someone reboots it.
+
+### 7.7 Our self-audit already answers this clause
+
+Worth saying plainly, because it maps directly and it is our strongest asset:
+
+| What we did | Why it is this clause |
+|---|---|
+| Overtake risk: stated 70–100%, right 5.9% → **cut** | A predictive claim validated against outcomes and abandoned |
+| "Zero false alarms" → really ~1 per 5 tool-weeks | A claim corrected once measured properly |
+| A detector scoring 95.2% → an identity, not a result | Validation that caught itself |
+| Two regimes reported separately, never blended | Refusing a flattering average |
+
+**Four of the six self-catches are literally "a predictive claim validated against real
+outcomes and found wanting."** In a mentored Round 3 that is not a weakness to explain — it
+is the evidence for this clause.
+
+### 7.8 What goes in the prototype
+
+| Item | State |
+|---|---|
+| **Alert ledger** — three maturity tiers, pending state | ❌ new — Workstream C |
+| Running precision **per tier**, displayed | ❌ new |
+| **One-click override with reason code** | ❌ new — the label source, not a courtesy |
+| Rolling reliability diagram | ⚠️ have the method; needs to run on a window |
+| **Performance drift monitor** — precision over time | ❌ new, small |
+| **Abstention shown explicitly** | ❌ new, tiny, high value |
+| Alarm count vs ISA-18.2 budget (<150/shift) | ❌ new, trivial |
+
+### 7.9 How we score it
+
+Precision **at the alerting threshold**; precision **by maturity tier** (never blended);
+rolling calibration error; alarm rate vs budget; and **time-to-trust** — how many alerts
+before the precision estimate stabilises. If it takes 200 alerts to know our precision and we
+raise 30 a shift, that is a week before the number means anything, and that is a deployment
+fact worth stating rather than hiding.
+
+### 7.10 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Complexity 7 — validation over time, false alarms erode trust | ✅ design complete; ledger unbuilt |
+| Solutioning: predictive techniques, *"how you'd validate before trusting output"* | ✅ |
+| Gap list: alert ledger | ✅ specified |
+
+---
+
+# Part A summary — all seven complexities
+
+| # | Complexity | Status |
+|---|---|---|
+| 1 | Inconsistent sensor coverage | ✅ fully |
+| 2 | Multi-causal, intermittent causes | ✅ all four causes |
+| 3 | PLC risk + maintenance windows | ✅ both halves |
+| 4 | Late-surfacing defects | ✅ all three parts |
+| 5 | Three stakeholder views | ✅ fully, and provably |
+| 6 | Scaling across sites | ⚠️ two axes runnable now; vintage needs generator work |
+| 7 | Validation over time + trust | ✅ design complete; ledger unbuilt |
+
+**Six and a half of seven on paper. The gap between *specified* and *built* is now the entire
+remaining risk** — which is what the status board has said since day one.
+
+---
+
 # Part B — Numbered proposals
 
 ## 1 — Sequencing: build the demo first, not last
