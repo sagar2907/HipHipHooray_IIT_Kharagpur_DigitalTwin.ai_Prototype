@@ -40,6 +40,7 @@
 | 2026-08-25 | **Complexity 1 solved and written up** — dark stations, end to end | Priyansh | `done` |
 | 2026-08-25 | **Complexity 2 solved and written up** — multi-causal root causes | Priyansh | `done` |
 | 2026-08-25 | **Complexity 3 solved and written up** — PLC risk, maintenance windows | Priyansh | `done` |
+| 2026-08-25 | **Complexity 4 solved and written up** — containment, forensics, stop-or-continue | Priyansh | `done` |
 | _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
 | _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
@@ -60,7 +61,7 @@ _Last updated: 2026-08-25 by **Priyansh**_
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
 | **Sagar** | reviewed repo + Priyansh's audit; filed `suggestion_by_sagar/`; **B (the loop)** not yet started | — | — | — |
-| **Priyansh** | Complexities 1-3 written up in `suggestion_by_priyansh/` Part A. Next: Complexity 4, then **A (clear the ground)** | `main` | — | — |
+| **Priyansh** | Complexities 1-4 written up in `suggestion_by_priyansh/` Part A. Next: Complexity 5, then **A (clear the ground)** | `main` | — | — |
 
 **Sagar — two schema decisions waiting on you** in Part A of my suggestions file: a
 `manual_check` event type, and a fourth provenance value `attested`. Both touch `record.py`.
@@ -78,6 +79,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-25 | Priyansh | **Complexity 4 worked through** — late-surfacing defects. Onset read backwards off the CUSUM accumulator (so defect #5 now blocks containment, not just detection); 3-band containment partitioned by unit location, since a car on the line costs ~1/100th of one at a customer; replay as flight recorder; backward attribution reuses C2's engine. **Stop-or-continue corrected** — escape route decides, not bottleneck status, and a station stop inside the downstream buffer is free. | — |
 | 2026-08-25 | Priyansh | **Complexity 3 worked through** — PLC risk and maintenance windows. Read-only boundary justified in ISA-95 terms and *enforced by a test* rather than asserted; three risk classes with additive sensing separated from control modification; the window as a job-selection problem; four-phase rollout (shadow -> one supervisor -> floor -> never closed-loop). Shadow mode falls out of the replay driver for free, and the phasing is the spine of the phased-roadmap deliverable. | — |
 | 2026-08-25 | Priyansh | **Complexity 2 worked through** — multi-causal, intermittent root causes. Isolate by *scope* (who else is affected, and who isn't) rather than by statistics; natural experiments the plant already runs; ranked hypotheses with a "couldn't rule out" list. New build items: `zone_id`, change register, co-occurrence engine, confounded scenario mode. | — |
 | 2026-08-25 | Priyansh | **Complexity 1 worked through and written up** in `suggestion_by_priyansh/` Part A — dark-station handling end to end: coupling map, detection horizon, cycle time as trigger-not-diagnosis, and the sensor case as a window-dated schedule. Proposes two schema changes (`manual_check` event, `attested` provenance) — needs Sagar's sign-off. | — |
@@ -146,7 +148,7 @@ Append-only. Disagree? Raise it in **Open questions** — don't edit the row.
 | 2 | **"46% / 58%" is Roser's active-period number, quoted as ours.** Ours is 43.1% / 59.4%. Re-anchor on regret: 1.309 vs 1.348 vs 1.477 | deck, `1_Guide` | Priyansh | `todo` |
 | 3 | Evidence File puts the all-blocks ceiling (2.271) on the strong-constraint table. Real ceiling 5.255, capture 57.4% — better than claimed | Evidence File §4 | Priyansh | `todo` |
 | 4 | `Verdict.forming` still computes the drift extrapolation we measured at 5.9% and declared failed | `detect.py:238` | Sagar | `todo` |
-| 5 | `drift_cusum` recomputed each window — a z-score, not a CUSUM. Must carry state | `detect.py:203` | Sagar | `todo` |
+| 5 | `drift_cusum` recomputed each window — a z-score, not a CUSUM. Must carry state. **Now also blocks Complexity 4:** onset time is read backwards off the accumulator, and a memoryless statistic has no history to read | `detect.py:203` | Sagar | `todo` |
 | 6 | Design says down-weight by starved share; `verdict()` sorts on `effective_ct` alone | `detect.py` | Sagar | `todo` |
 | 7 | `confidence` is asserted, violating our own Part 4.1 ("calibrated, not asserted") | `detect.py:249` | Sagar | `todo` |
 | 8 | `eval_v5_chained.log` shows a crash pre-dating the zero-width guard. Confirm the 958-block CSV came from a clean run, then delete the log | `results/` | Priyansh | `todo` |

@@ -387,6 +387,161 @@ don't currently have — so this clause and that gap close together.
 
 ---
 
+## Complexity 4 — Late-surfacing defects and containment
+
+> *"A defect introduced early in the line may not surface until a much later inspection
+> point, by which time many downstream units may carry the same undetected issue — making
+> root-cause tracing after the fact especially difficult."*
+
+**Status:** `open` — needs Sagar's review. Onset estimation depends on the CUSUM fix
+(defect #5, his file); containment and stop-or-continue are Workstream F, joint.
+
+Three problems in one sentence. **The first is already solved** by Complexity 1
+(process monitoring + detection horizon), so this covers the other two.
+
+| Part | Problem | Status |
+|---|---|---|
+| (a) introduced early, surfaces late | lead time | ✅ done in C1 |
+| (b) many downstream units carry it | **containment** | ❌ new |
+| (c) tracing after the fact is hard | **forensics** | ❌ new |
+
+### 4.1 Containment — onset, not detection
+
+**"When it started" and "when we noticed" are different moments, and the gap is the exposure.**
+
+A CUSUM gives us onset for free: the accumulator sits at zero while healthy and lifts off at
+onset, crossing threshold later at detection. So we read backwards down our own counter to
+find the start. **This only works if the counter actually accumulates** — our current code
+recomputes each window, so there is no history to read back. Another reason defect #5 matters
+more than it looked.
+
+Onset is uncertain, so output **three bands, not a hard line**: definitely affected /
+possibly affected / probably clear. The middle band is where an inspector goes rather than a
+teardown. The cut-off sits where the **cost asymmetry** puts it, not at 50% — under-containing
+ships escapes, over-containing scraps good cars, and those costs differ by orders of magnitude.
+
+### 4.2 Where the units are — the part that makes cost concrete
+
+38 affected vehicles are not in the same place, and the fix cost differs by orders of magnitude:
+
+| Location | Action | Relative cost |
+|---|---|---|
+| Still on the line | Divert | **1×** |
+| Finished-vehicle yard | Recall to rework | **~10×** |
+| Shipped | Warranty campaign | **~100×** |
+
+So containment output is **partitioned by location**. This is also the sharper argument for
+early detection: not merely "fewer units affected", but **units get more expensive every
+minute they sit undetected** as they migrate line → yard → customer.
+
+### 4.3 Forensics — replay and backward attribution
+
+**Flight recorder.** Every alert, record and **model refit** logged with timestamps, so the
+shift can be replayed exactly as it stood. After an incident the only question is *what did
+the twin know and when* — and a silently refitted model cannot be reconstructed, which is why
+refits are logged.
+
+**Backward attribution.** When a cluster of EOL failures appears, join back through genealogy
+and ask what they share — station, tool, lot, shift. That is **C2's co-occurrence engine run
+on outcome data instead of alarm data.** Same code, different input.
+
+### 4.4 Stop-or-continue — corrected
+
+*(An earlier draft said "high P(constraint) → wait for the break". That is wrong as stated.
+Bottleneck status is not the deciding factor — where the defects go is.)*
+
+**The decisive question is what happens to the bad parts:**
+
+| Escape route | What we're producing | Decision |
+|---|---|---|
+| Safety-critical joint | unacceptable risk | **Stop. No calculation.** |
+| Escapes — nothing downstream catches it | warranty, possible recall | **Stop.** Escape cost dominates |
+| Caught at EOL or a gate | rework, not escapes | **Economics apply** |
+
+The economics only apply in the third row, and there: **a car reworked is not a car lost.**
+Throughput lost at a bottleneck is permanent; a reworked car still gets built and still sells.
+
+**Two things dissolve most of the dilemma:**
+
+1. **At detection, scrap usually hasn't started.** Our measured warning is 421–1,322 vehicles
+   before sustained scrap. So the choice is rarely "stop, or make 22 defective cars" — it is
+   "stop, or make 22 more *good* cars and fix it at the break, with 400 units of runway left."
+   The question is not *is it defective now* but *how much damage accumulates before the next
+   planned stop* — the integrated hazard, which is near zero early in degradation.
+
+2. **Stopping a station is not stopping the line.** That is what buffers are for. Our layouts
+   carry 1–4 units, so at 60s takt there is **1–4 minutes of free single-station stoppage**.
+   A tool swap (2–3 min) or recalibration (3–5 min) often fits inside it at zero throughput cost.
+
+So the real question is: **what is the cheapest intervention that fixes this, and does it fit
+in the buffer time available?** We already model buffer levels per station, so the twin can
+compute the free-stop window at any moment and only escalate to "wait for the break" when
+nothing fits.
+
+**Corrected logic:**
+
+```
+1. Safety-critical?                     -> STOP, no calculation
+2. Will it escape undetected?           -> STOP, escape cost dominates
+3. Caught downstream (rework, not escape):
+   a. Has scrap actually started?       NO -> runway exists, schedule it
+   b. Cheapest fix fits in the buffer?  YES -> do it now, costs nothing
+                                        NO  -> compare damage-until-next-stop
+                                               vs cars permanently lost
+```
+
+**Bottleneck status only enters at the final step**, by which point most cases are already resolved.
+
+When it genuinely is the bottleneck, *is* producing escapes, and the fix needs 40 minutes,
+there is no clever answer. The twin puts both numbers on screen — *"stopping now costs 38
+cars; continuing to the break ships ~14 escapes at ₹X"* — and a human decides, with a record
+of what they were shown. The value is not that the system decides; it is that the person
+deciding can see both sides of a trade-off that in every real plant is split across two
+systems that never talk.
+
+### 4.5 What goes in the prototype
+
+| Item | State |
+|---|---|
+| **Onset estimation** from the CUSUM accumulator | ❌ new, small — needs a real CUSUM first |
+| **Graded containment list** — 3 bands | ❌ new |
+| **Location partition** — on-line / yard / shipped | ❌ new; this is what makes cost concrete |
+| Cost-asymmetric containment boundary | ❌ new, small |
+| **Free-stop window** from downstream buffer level | ⚠️ small — we already model buffer levels |
+| Intervention menu with durations (swap / recalibrate / divert / repair) | ❌ new, a lookup table |
+| **Audit log + replay** | ✅ nearly free from Workstream B |
+| **Backward attribution** from EOL clusters | ✅ reuses C2's co-occurrence engine |
+| Stop-or-continue | ❌ new — Workstream F |
+
+### 4.6 The demo
+
+> **S22 — drifting since 10:14 (±6 min). Detected 10:52. Scrap not yet started (~380 units runway).**
+> **38 vehicles built since:** 12 on line · 21 in yard · 5 shipped.
+> Defect would be caught at EOL, so this is rework, not escapes.
+> Cheapest fix is a tool swap, 3 min. Downstream buffer holds 3 units = **3 min free.**
+> **Recommend: swap now. Zero throughput cost.**
+
+### 4.7 How we score it
+
+We inject the fault, so the truth is known:
+
+- **Onset estimation error** — estimate vs true injection time
+- **Containment recall** — did we catch every affected unit?
+- **Containment precision** — how many good units did we sweep in?
+- Lead time (T2 − T1) — already have
+
+Containment precision/recall is measurable only because we built the plant. Nobody else will report it.
+
+### 4.8 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Complexity 4 — late surfacing, downstream units, hard tracing | ✅ all three parts |
+| Gap list: **genealogy containment** — the most explicitly-named capability we lack | ✅ specified |
+| Complexity 7 — validated against outcomes over time | ⚠️ partial — the audit log is the substrate |
+
+---
+
 # Part B — Numbered proposals
 
 ## 1 — Sequencing: build the demo first, not last
