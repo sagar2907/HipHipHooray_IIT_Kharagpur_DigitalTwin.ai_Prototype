@@ -232,10 +232,29 @@ _Last updated: 2026-08-27 by **Sagar**_
 | **Sagar** | Verification pass done — 9/9 defects, suite 12/12 green, `detect.py` fixes landed locally. Earlier: L5 segmented-layout draft. Neither pushed. **B (the loop)** still not started | — | — | — |
 | **Priyansh** | **Design closed — 7/7 complexities, 6/6 solutioning areas.** Starting **Workstream A (clear the ground)**, then the two transfer experiments that need no new code | `main` | — | — |
 
-**Priyansh — Sagar's schema decisions from Part A are made**: both `manual_check` and
-`attested` accepted, with a concrete build against them now sitting locally (Work log
-2026-08-27) — review whenever you get to Workstream D, happy to throw it away if it doesn't
-match what you already had planned.
+### PRIYANSH — START HERE (written 08-28 02:20)
+
+1. **Read `PLAN.md`.** Deadline moved to **31 Aug**; the plan is hour-blocked to it.
+2. **Your lane is the Business Proposal + deck for all four days.** Two of the
+   three graded deliverables are documents, and you hold all 13 design docs.
+   That is the single biggest change from the earlier plan.
+3. **First 30 minutes of the 28th, in this order:**
+   - fix `seg_dark_p` in `layouts.py` (we are 48.5% dark; the PS says the
+     manual-check stations should be a *minority* — see `PLAN.md` §6)
+   - rebuild L5, then launch `build_truth.py` **and** the 2 transfer runs in
+     the background and walk away from them
+   - then start the proposal
+4. **`docs/dataset/` is new** — the v5 dataset documentation was invisible to
+   you until now because `dataset/` is gitignored. Read `v5_dataset.md`.
+5. **Two forks need your view** (`PLAN.md` §7): which line the demo runs on,
+   and whether genealogy is built or narrated. My recommendations are in there.
+6. Schema decisions from your Part A are **both accepted** (`manual_check`,
+   `attested`) and built against.
+
+**Claim discipline for the deck:** McNemar says we **significantly beat
+utilisation (p=0.0025)** and are **statistically tied with active-period
+(p=0.45)**. Claim the first. Never the second. The "46 vs 43" framing is
+retired entirely.
 
 **Next joint checkpoint:** _(set a date)_
 
@@ -253,6 +272,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| **08-28 02:20** | Sagar | **`PLAN.md` created + rescued four dataset docs that were invisible to Priyansh.** (1) **`PLAN.md`** — standalone final-submission plan: PS coverage matrix, the 7 demo beats, hour-blocked day plan to the 31st, the two open forks, cut order, and what is already in the bank. (2) **Found four dataset READMEs trapped under `.gitignore`** (`dataset/` is ignored, so `v5/README.md` — the primary dataset's entire documentation — had never been visible to Priyansh). Rescued to **`docs/dataset/`** as v2/v3/v5/v6_segmented. Two of them carried AI-provenance notes; **removed per the standing rule**, replaced with factual status sections. (3) Added **`scripts/verify_rank_variants.py`** and **`scripts/verify_calibration.py`** — the evidence behind rejecting defect #6 and fixing #7, now re-runnable by either of us and made path-portable. | — |
 | **08-28 01:40** | Sagar | **Named it: the PRESCRIPTIVE LAYER. Deck framing becomes "detect → predict → prescribe".** Placed on the standard analytics ladder (descriptive → diagnostic → predictive → prescriptive): detection is diagnostic, buffer countdown is predictive, ranking actions by cars-gained is prescriptive. Technical name in docs: *counterfactual intervention ranking*. **Why this is a strength and not a rebrand:** almost everyone claiming "prescriptive" has a rules table underneath; we have measured treatment effects under paired CRN, so "we re-ran the line with that station 20% faster and counted the cars" is an answer no other team can give. **LLM: approved, in a strictly bounded role — "the engine decides, the LLM only speaks."** It phrases the verdict object into plain English and writes shift-handover summaries; it never produces a number, invents an action, or reorders the ranking. Model `claude-opus-5` at low effort with a cached system prompt; cost measured at **~$0.15 per demo run** (~20 alerts), so cost is not a factor. **Two risks logged:** (1) live network dependency could stall the demo — pre-generate phrasings during replay, cache them, keep a template fallback so the page never blocks on a call; (2) a hallucinated number would undercut the calibration story that is currently our strongest asset, so the constraint must be stated out loud in the deck. **Strictly beat-4 polish — does not happen unless `loop.py` runs first.** | — |
 | **08-28 01:09** | Sagar | **Recommendation layer: decided IN. Case retrieval: deferred to Round 3.** Sagar proposed a RAG pipeline — a store of remediation techniques plus past-bottleneck history — so the twin suggests a fix, not just a finding. Assessment: (a) **it is not RAG**, there is no LLM and no generation; naming it RAG would be the same class of overclaim as the 46/58 attribution we just spent two days killing — it is a decision layer over a counterfactual engine. (b) **We have already measured "what should I do" three times and never surfaced any of it**: sensitivity under paired CRN (which station, worth how many cars), tool-fault classification (recalibrate vs replace — *opposite* correct actions), and `truth/intervention.csv` (fix now vs at the break). So the gap is presentation, not machinery. (c) A small library mapping our **own simulated fault classes** (`degrade_ramp`, `station_down`, `material_starvation`, `quality_hold`, blocked-upstream, micro-stops) to standard responses is defensible and ~2 h of writing — not invented domain knowledge. (d) **Case retrieval is cut**: the system has never run, so there is no case history; retrieval over an empty base is theatre and seeding it synthetically would force us either to label a stub or to hide one. Becomes strong in Round 3 once the ledger holds real history. **Test applied: does it need data we do not already have? If yes, it is Round 3.** | — |
 | **08-28 01:09** | Sagar | **SCHEDULE SLIP LOGGED: the 27 Aug vertical-slice window elapsed with nothing built.** The plan's first and most important gate — a shift replaying at 60x in a browser — did not happen last night. Remaining: 28, 29, and the morning of the 30th. The B engine is verified ready (causal 13/13, 6 ms/verdict), so this is lost calendar time, not lost work — but rule 1 of the plan ("integrate on day 1, not day 3") has already been broken once and cannot be broken again. | — |
@@ -455,7 +475,10 @@ Add the moment something stops you — don't wait for the checkpoint.
 
 | Path | What |
 |---|---|
-| `PROGRESS.md` | This file — canonical |
+| `PROGRESS.md` | This file — canonical live log |
+| **`PLAN.md`** | **The final-submission plan — read this first if you have been away** |
+| `docs/dataset/` | Dataset documentation (v2/v3/v5/v6_L5) — was trapped under `.gitignore` until 28 Aug |
+| `scripts/verify_*.py` | The evidence behind the defect #6 rejection and the #7 calibration fix |
 | `DigitalTwin_Model_Parameters.pdf` | Every parameter fed to the model |
 | `suggestion_by_priyansh/` · `suggestion_by_sagar/` | Proposals for the other to review |
 | `1_Guide/` | What is built, designed, and failed |

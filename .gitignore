@@ -1,6 +1,8 @@
 # Generated datasets — regenerable from the seeded builders in scripts/.
 # ~765 MB of derived data; the generators are what needs versioning.
-dataset/
+# Root-anchored on purpose: a bare `dataset/` also matches docs/dataset/,
+# which silently hid the dataset documentation from the repo once already.
+/dataset/
 
 # Python
 __pycache__/
