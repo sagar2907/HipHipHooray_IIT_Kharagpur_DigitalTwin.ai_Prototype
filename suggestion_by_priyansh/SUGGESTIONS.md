@@ -923,7 +923,7 @@ half of 6.
 |---|---|---|
 | 1 | Modelling approach | **below** |
 | 2 | Predictive techniques + validation | ✅ **below** |
-| 3 | Handling data gaps + low-cost sensing | ✅ **Complexity 1** |
+| 3 | Handling data gaps + low-cost sensing | ✅ **Complexity 1** + **Solution 3** (sensing menu) |
 | 4 | User experience | ✅ **Complexity 5** |
 | 5 | Integration approach | ✅ **Complexity 3** |
 | 6 | Scalability & ROI | ⚠️ scaling in **Complexity 6**; ROI half still thin |
@@ -1234,6 +1234,104 @@ failed and fall back to the cheap ranker."*
 | Solutioning 2 — the four technique families | ✅ mapped, with explicit non-uses |
 | Solutioning 2 — *"how you'd validate before trusting output"* | ✅ ten rules + the ladder |
 | Complexity 7 — validation over time | ✅ level 6 is where the ledger lives |
+
+---
+
+## Solution 3 — Handling data gaps and low-cost sensing
+
+> *"Handling data gaps — how the twin stays useful at stations with partial or no
+> instrumentation, including any low-cost sensing you might propose."*
+
+**Status:** `open` — needs Sagar's review. The first half is already answered by **Complexity
+1**; the **low-cost sensing menu (C3.3) is new** and was previously unanswered. Cost bands
+still need real sourcing.
+
+### C3.1 We never answer "unknown" — the answer just gets vaguer
+
+Like asking where someone is in a building:
+
+| Situation | What we can say |
+|---|---|
+| Station has sensors | *"Room 12"* |
+| One blind station, neighbours visible | *"Second floor"* |
+| Several blind in a row | *"Somewhere in the east wing"* — you can still go and look |
+| Fully opaque | *"I don't know. A camera in this corridor would tell us, and it costs this much."* |
+
+All four are useful. **The last one is useful *because* it is honest** — it turns a blind spot
+into a decision rather than a shrug. Mechanism detail is in Complexity 1.
+
+### C3.2 The rule every proposal must satisfy
+
+**Mount externally. Publish to our gateway. Never into the PLC.**
+
+That keeps every device in **risk class 2** (C3) — a technician job in a routine window, not a
+controls-engineering change needing re-validation. *Putting a thermometer in your fridge is
+fine; rewiring the thermostat needs an electrician and might break the fridge.* Everything
+below is a thermometer.
+
+### C3.3 The low-cost sensing menu — previously unanswered
+
+Ranked by **value per rupee**, not price. **Cost bands are order-of-magnitude and must be
+sourced before they enter any document** — same discipline as the ROI assumptions table.
+
+| # | Device | Rough cost | What it gives | Tier movement |
+|---|---|---|---|---|
+| **1** | **Barcode / RFID reader** at a boundary | Rs 15-40k | Unit in/out timestamps | **C -> B** — splits a dark block |
+| **2** | **Split-core current clamp** + logger | Rs 5-15k | Running vs idle, load signature, mechanical condition | **A process channel where there was none** |
+| **3** | Photoeye / proximity sensor | Rs 3-10k | Occupancy timing without a scan | Cheapest timing signal |
+| **4** | Ambient temp + humidity, one per zone | Rs 2-5k | Removes a shared confounder | Stops 40 tools looking like they fail at once |
+| **5** | Digital andon / tablet checklist | Rs 15-30k | `manual_check` events + completion timestamps | **D -> B** at a manual station |
+| **6** | Wireless accelerometer | Rs 20-60k | Vibration where current signature isn't enough | Rotating equipment only |
+| **7** | Vision unit counter | Rs 30-80k | Counting without mounting anything | When a scanner can't be fitted |
+
+**Two deserve emphasis.**
+
+**#1 is the highest-value device and it is not obvious** — it measures nothing about the
+process at all. But one reader placed *inside* a dark block converts one Tier C problem into
+two Tier B problems. *Trying to find where a delay happened on a long journey: knowing only
+departure and arrival, you can't. Add one checkpoint in the middle and you know which half.*
+**You are buying resolution, not measurement.**
+
+**#2 is the cheapest genuinely useful thing available** — clips around the supply cable with
+zero contact with the machine, no downtime to fit, no interaction with the controller, and it
+doubles as the stand-in for vibration.
+
+### C3.4 Flow sensors and defect sensors go in different places
+
+Given *k* sensors, **maximise what?** Two objectives, and they disagree:
+
+| Goal | Maximise | Favours |
+|---|---|---|
+| **Flow** | Localisation power x P(station constrains) | Stations near choke points |
+| **Defects** | Exposure closed = detection horizon x fault rate x cost | Stations with **long blind windows**, however trivial |
+
+A station fitting a plastic clip is fast and will **never** be the bottleneck — worthless for
+flow. But if a badly fitted clip isn't caught until final test, hundreds of cars carry it, so
+it is a **top defect priority**. Worthless for one job, first on the list for the other.
+
+**So produce two lists and merge them by value.** One blended ranking hides the reasoning.
+
+### C3.5 What the twin actually shows
+
+The observability map is a **first-class output, not an internal diagnostic**:
+
+> **S12 — 2 of 10 signals measured, 6 inferred, confidence 0.81**
+> *Blind spot: errors here go unnoticed for 19 cars.*
+> *A barcode reader (Rs 25k) cuts that to 2. Next install window: March.*
+
+That reframes the conversation from *"instrument everything"* to **"spend this much, here, for
+this much."**
+
+### C3.6 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Solutioning 3 — twin stays useful at sensor-poor stations | OK — via C1's tier ladder |
+| Solutioning 3 — *"low-cost sensing you might propose"* | OK — **the menu, previously unanswered** |
+| Complexity 1 — inconsistent coverage | OK — reinforces |
+| Complexity 3 — retrofits only in windows | OK — every device is risk class 2 |
+
+**Open item:** the seven cost bands are estimates and need sourcing.
 
 ---
 

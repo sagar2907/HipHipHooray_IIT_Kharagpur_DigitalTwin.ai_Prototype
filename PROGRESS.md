@@ -49,6 +49,7 @@
 | 2026-08-25 | **Part C opened** — Solutioning Area 1 (modelling approach) answered | Priyansh | `done` |
 | 2026-08-25 | Solution 1 extended — per-station signal variation resolved (channel role registry) | Priyansh | `done` |
 | 2026-08-25 | **Solution 2 answered** — predictive techniques + the validation ladder | Priyansh | `done` |
+| 2026-08-27 | **Solution 3 answered** — data gaps + the low-cost sensing menu | Priyansh | `done` |
 | _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
 | _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
@@ -69,7 +70,7 @@ _Last updated: 2026-08-25 by **Priyansh**_
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
 | **Sagar** | reviewed repo + Priyansh's audit; filed `suggestion_by_sagar/`; **B (the loop)** not yet started | — | — | — |
-| **Priyansh** | Part A complete (7/7). **Part C: areas 1 and 2 done**; 3/4/5 already covered by Part A. **Only the ROI half of area 6 remains** — then the design phase is fully closed | `main` | — | — |
+| **Priyansh** | Part A complete (7/7). **Part C: areas 1, 2, 3 done**; 4/5 covered by Part A. **Only the ROI half of area 6 remains**, then design is closed and everything left is construction | `main` | — | — |
 
 **Sagar — two schema decisions waiting on you** in Part A of my suggestions file: a
 `manual_check` event type, and a fourth provenance value `attested`. Both touch `record.py`.
@@ -87,6 +88,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-27 | Priyansh | **Solution 3 written up** — the low-cost sensing menu the brief explicitly invites and we had never answered. Seven devices ranked by value per rupee, all mounting externally so none touches a PLC. Two findings: the **barcode reader is the highest-value device and measures nothing** (one reader inside a dark block splits it into two easier problems — buying resolution, not measurement), and **flow sensors and defect sensors belong in different places**, so we produce two lists and merge them. Cost bands need sourcing. | — |
 | 2026-08-25 | Priyansh | **Solution 2 written up** — predictive techniques + validation. Maps each technique to its job *and its explicit non-use*: SPC and anomaly detection can never find a bottleneck because **the bottleneck isn't broken, it's just slowest**. New artifact: a **validation ladder** (levels 0-6) with an honest placement of every capability we hold — including overtake risk at level 5, where it failed and was killed. Adds the rule that kill criteria are written *before* measuring. | — |
 | 2026-08-25 | Priyansh | **Solution 1 extended** — the brief's five bracketed quantities are examples, not a spec, and the signals that matter differ per station. Resolved as **declared -> learned per family -> measured per instance**: the primary channel is a fact from the process plan, secondaries are learned once per *equipment family* (5-6 per line, not 40), usefulness is a histogram per station. **New artifact: a channel role registry.** Also notes station *information value* — not all instrumented stations are equally informative. | — |
 | 2026-08-25 | Priyansh | **Part C opened — Solutioning Areas.** Solution 1 (modelling approach) written up: four tiers not two; the five named quantities, incl. throughput as an *output* not an input and vibration as an honest gap with motor current as its free proxy; and the sensor-poor split — represent the doors, infer the room, refuse the rest. **Coverage note: areas 3/4/5 are already fully answered by Complexities 1/5/3**, so Part C cross-references rather than repeats. Open: area 2, and the ROI half of area 6. | — |
