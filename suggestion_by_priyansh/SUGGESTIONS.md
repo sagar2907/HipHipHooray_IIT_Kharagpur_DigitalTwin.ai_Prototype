@@ -926,7 +926,7 @@ half of 6.
 | 3 | Handling data gaps + low-cost sensing | ✅ **Complexity 1** + **Solution 3** (sensing menu) |
 | 4 | User experience | ✅ **Complexity 5** |
 | 5 | Integration approach | ✅ **Complexity 3** |
-| 6 | Scalability & ROI | ⚠️ scaling in **Complexity 6**; ROI half still thin |
+| 6 | Scalability & ROI | ✅ scaling in **Complexity 6** + **Solution 6** (ROI) |
 
 ---
 
@@ -1332,6 +1332,131 @@ this much."**
 | Complexity 3 — retrofits only in windows | OK — every device is risk class 2 |
 
 **Open item:** the seven cost bands are estimates and need sourcing.
+
+---
+
+## Solution 6 — Scalability & ROI (the ROI half)
+
+> *"Scalability & ROI — how a prototype built for one line could reasonably extend to other
+> lines, plants, or sites with different starting conditions."*
+
+**Status:** `open` — needs Sagar's review. The **scaling** half is answered in **Complexity 6**
+(transfer curve, three-tier rollout, what breaks per axis). This is the **money** half, and it
+is the thinnest thing in the project. Feeds the unticked deliverable *"business case and impact"*.
+
+**Discipline:** every value line traces to a named measured output or a cited source. Nothing
+unattributed — the same rule our documents already follow.
+
+### C6.1 Four value sources, and they are not equal
+
+**1. Better constraint identification -> cars recovered**
+
+| | |
+|---|---|
+| Measured | Regret **1.309** (ours) vs **1.477** (utilisation) cars/block |
+| Improvement | **0.168 cars/block**, block = 60 min |
+| x production hours | ~4,000 h/year (2 shifts, ~250 days) |
+| **Ceiling** | **~670 cars/year** |
+
+**A ceiling, not a forecast** — it assumes every recommendation is acted on and every action works.
+
+**2. Defect warning -> scrap and warranty avoided.** Two sub-lines, one far more defensible:
+
+| Sub-line | Measured | Verifiable by the plant itself? |
+|---|---|---|
+| Escapes prevented | 11,631 of 11,826 defects passed as OK under sensor bias | **No** — only measurable because we hold independent truth; in a plant this surfaces as warranty months later |
+| **False rejections prevented** | **2,355** good joints wrongly scrapped under transducer drift | **Yes** — the controller's own NOK count |
+
+**Lead with the second.** The first is the better story; the second is the better evidence,
+because a plant can check it without trusting us.
+
+**3. Release-rate control -> lead time, at zero capital cost**
+
+Measured: **same throughput, 36% lower lead time, no equipment change.** By Little's Law that
+is 36% less WIP; separately confirmed that 8 extra cars of WIP produced exactly 8 minutes of
+extra lead time.
+
+**Our most defensible line, and it is currently buried.** It is a scheduling policy, so capital
+cost is zero and payback is immediate by construction. Every other line needs assumptions about
+margin and volume; this one barely does.
+
+**4. Micro-stop visibility -> surfaced capacity.** Measured **2,648 micro-stops vs 876 logged
+down entries, zero overlap**; cited industry figures put minor stops at ~34% of production loss.
+**Honest caveat: detecting them does not recover capacity — someone must act.** Label it a
+surfaced opportunity, not a realised saving.
+
+### C6.2 The realization factor — what most ROI models hide
+
+```
+realised value = detection value x action rate x action effectiveness
+```
+
+Most business cases quietly set all three to 1.0. We state them, and **both are measurable
+rather than guessed**: action rate from the alert ledger once running, action effectiveness
+from our paired-CRN intervention outcomes **today**.
+
+### C6.3 The cost side — four tiers
+
+| Cost | Charged | Note |
+|---|---|---|
+| Platform — detectors, model, interfaces | **once, ever** | |
+| Network, cybersecurity review, historian access | **per site** | |
+| Adapter | per line | days |
+| Fitting period | per line | weeks, but **passive** |
+| Threshold calibration | per line | needs healthy data |
+| **Sensors** | per station | **the Solution 3 menu**, phased by maintenance window |
+
+Solution 3 now gives this line real devices and bands rather than an abstract "sensor cost".
+Combined with C6's three tiers: **payback shortens after the first line, and again after the
+first plant.**
+
+### C6.4 One assumptions table — the move that makes it credible
+
+Every number we had to assume goes in **one clearly labelled table**, so a judge who disagrees
+changes a cell rather than dismissing the case. *(Showing your working: one wrong step still
+earns most of the marks.)*
+
+| Assumption | Source | Value |
+|---|---|---|
+| Contribution margin per vehicle | must cite | _tbd_ |
+| Cost per rework at EOL | must cite | _tbd_ |
+| Cost per warranty claim | must cite | _tbd_ |
+| Sensor + install + integration | **Solution 3 menu** — bands, need sourcing | _tbd_ |
+| Cost of capital (for WIP) | must cite | _tbd_ |
+| **Action rate** | **measurable — ledger** | _tbd_ |
+| **Action effectiveness** | **measurable — paired CRN** | _tbd_ |
+| Production hours/year | stated assumption | ~4,000 |
+
+**Then state which assumption dominates** — almost certainly contribution margin and action
+rate. Naming it first defuses the obvious challenge.
+
+### C6.5 The claim worth making
+
+> **Our business case is computed by the same code that produces the alerts — not written in a
+> spreadsheet afterwards.**
+
+Which makes the leadership view's **actual-vs-forecast** tracking (C5) automatic: *"we said
+this sensor would save Rs 10L; twelve months in, measured Rs 8.4L."* **Nobody else will have a
+business case that audits itself.**
+
+### C6.6 What is missing, and what not to lead with
+
+**We have done the counting. We have not done the pricing.** Every line carries a measured
+*quantity* and an unsourced *price* — 670 cars, 2,355 parts, 36% less lead time, and no rupee
+figures anywhere. Sourcing those five costs is literature research, not engineering.
+
+**Do not lead with the constraint-identification line.** 0.168 cars/block is a modest edge over
+utilisation ranking and the easiest number to challenge. **Lead with release-rate control**
+(zero capex, immediate payback, 36% measured), **then false rejections** (verifiable by the
+plant itself).
+
+### C6.7 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Solutioning 6 — scalability | OK — Complexity 6 |
+| Solutioning 6 — ROI | OK — value model, realization factor, assumptions table |
+| Deliverable: **business case and impact** | Partial — structure complete, prices unsourced |
 
 ---
 
