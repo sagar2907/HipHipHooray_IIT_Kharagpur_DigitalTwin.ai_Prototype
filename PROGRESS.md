@@ -53,7 +53,8 @@
 | 2026-08-27 | **Solution 6 answered** — the ROI value model | Priyansh | `done` |
 | 2026-08-27 | **DESIGN PHASE CLOSED** — 7/7 complexities, 6/6 solutioning areas | Priyansh | `done` |
 | 2026-08-27 | Accepted both Complexity 1 schema proposals (`manual_check`, `attested`); drafted 40-station segmented layout (L5) locally, calibrated against real Bosch/AI4I2020/SECOM data — **not pushed, review pending** | Sagar | `review` |
-| _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
+| 2026-08-27 | **Verification pass — 9/9 defects worked through, suite 12/12 green.** Confidence miscalibration and the CRN failure-desync both found and fixed | Sagar | `done` |
+| _tbd_ | **A** — Clear the ground *(tests + noise floor now done by the verification pass; doc errors remain)* | Priyansh | `todo` |
 | _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
 | _tbd_ | **D** — 40 stations + transfer tests | Priyansh | `todo` |
@@ -72,7 +73,7 @@ _Last updated: 2026-08-27 by **Sagar**_
 
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
-| **Sagar** | Built a local draft of the 40-station segmented layout (L5) + `dataset/v6_segmented/` toward Workstream D — see Work log for full detail. Not pushed. **B (the loop)** still not started | — | — | — |
+| **Sagar** | Verification pass done — 9/9 defects, suite 12/12 green, `detect.py` fixes landed locally. Earlier: L5 segmented-layout draft. Neither pushed. **B (the loop)** still not started | — | — | — |
 | **Priyansh** | **Design closed — 7/7 complexities, 6/6 solutioning areas.** Starting **Workstream A (clear the ground)**, then the two transfer experiments that need no new code | `main` | — | — |
 
 **Priyansh — Sagar's schema decisions from Part A are made**: both `manual_check` and
@@ -93,6 +94,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-27 | Sagar | **Full verification pass — all 9 carried defects worked through; test suite 12/12 green for the first time.** Root-caused #1 (wall-clock-indexed `z_fail` gated on `busy` → a 20% speed-up makes 11/20 stations lose cars; opt-in `crn_safe_failures=True` cuts it to 1/20). Fixed #4 (failed drift extrapolation out of the live path, buffer countdown in), #5 (real accumulating CUSUM, verified order-independent), #7 (**detector claimed 0.997 confidence at a 10.6% hit rate — ECE 0.454 → 0.074 after fitting**). **Rejected #6**: measured 4 down-weight variants on 319 blocks, all equal or worse — code was right, design note was wrong, note corrected. Verified #2 and #3 exactly as Priyansh stated. Closed #8 (re-ran eval clean, 958 blocks, numbers identical; stale log deleted). Did #9 (Wilson intervals on every rate) — **and it changed the story: McNemar says we are statistically TIED with active_period (p=0.45) and significantly beat utilisation (p=0.0025)**, so the "46 vs 43" framing retires entirely. Also found a **0.79-car label-noise floor** that makes top-1 a coin flip in ~50% of blocks, which is empirical support for the locked "regret not top-1" decision. All headline numbers re-verified unchanged after the fixes — nothing needs regenerating. | — |
 | 2026-08-27 | Sagar | **Accepted both Complexity 1 schema proposals** (`manual_check` event type, `attested` provenance). Researched real manufacturing datasets for calibration reference (Bosch: 51 stations/4 lines/0.58% defect rate; PyScrew: 34k real screw-driving ops, 27 fault types; downloaded SECOM — 4.54% real missing-sensor rate, 116/590 dead columns; downloaded AI4I2020 — 3.39% real machine-failure rate, used to set `manual_check`'s baseline NOK rate). Drafted a **40-station segmented layout (L5: 15 body/10 paint/15 final)** as an additive, opt-in extension to `layouts.py`/`plant.py` — confirmed L1-L4 byte-identical via `pytest` (same 10 passed/1 known-failed as before). New script `build_v6_segmented.py` generates `dataset/v6_segmented/` (20 runs): segment-conditioned sensor coverage (body 12% dark, paint 90% dark with 1 booth-aggregate survivor, final 58% dark), `manual_check.csv`, `coupling_map.csv`, vintage axis. Known limitation stated plainly: paint's batch/oven behaviour is approximated with larger buffers, not a true batch mechanic — flagged as follow-up, not attempted, to avoid risking simulator correctness on a local draft. **Nothing pushed** — `layouts.py`/`plant.py` are Priyansh's files and this is his Workstream D; built as a concrete proposal for him to review, adopt, or discard. | — |
 | 2026-08-27 | Priyansh | **Solution 6 (ROI) written up — DESIGN PHASE CLOSED.** Four value sources traced to measured outputs; the *realization factor* (action rate x effectiveness) stated rather than silently set to 1.0, and both are measurable; one assumptions table so a challenger changes a cell rather than dismissing the case. Key finding: **we have done the counting, not the pricing** — every line has a quantity and no rupee figure. Also: don't lead with the 670-cars line, lead with CONWIP (zero capex) and false rejections (plant-verifiable). | — |
 | 2026-08-27 | Priyansh | **Solution 3 written up** — the low-cost sensing menu the brief explicitly invites and we had never answered. Seven devices ranked by value per rupee, all mounting externally so none touches a PLC. Two findings: the **barcode reader is the highest-value device and measures nothing** (one reader inside a dark block splits it into two easier problems — buying resolution, not measurement), and **flow sensors and defect sensors belong in different places**, so we produce two lists and merge them. Cost bands need sourcing. | — |
@@ -121,7 +123,7 @@ Append-only, newest first. Both of us add to this.
 
 | # | Workstream | Owner | State | Gate |
 |---|---|---|---|---|
-| **A** | Clear the ground | Priyansh | `todo` | 11/11 tests green; noise floor published; 2 doc errors fixed |
+| **A** | Clear the ground | Priyansh | `wip` | ~~tests green~~ **12/12 done 08-27**; ~~noise floor~~ **published 08-27 (0.79 cars)**; 2 doc errors (#2, #3) still to land in the deck and Evidence File |
 | **B** | The loop (`record.py`, `loop.py`) | Sagar | `todo` | A shift replays at 60x in a browser, from a loop that never sees `t > now` |
 | **C** | Alert contract + trust ledger | Sagar | `todo` | Every alert carries all 5 fields; calibration within ±10 pts; ledger shows running precision |
 | **D** | 40 stations + transfer tests | Priyansh | `todo` | Layout-transfer and sensor-maturity numbers **decomposed** (ranking loss vs calibration loss — they mean different things), plus classifier scored on the firewall set |
@@ -165,17 +167,61 @@ Append-only. Disagree? Raise it in **Open questions** — don't edit the row.
 
 ## Defects carried from Round 1 — fix before building on top
 
+**Verification pass 2026-08-27 (Sagar): all 9 worked through. Test suite is
+12/12 green — first time in the project's history.** Every claim below was
+measured, not assumed; the commands are in the Work log entry.
+
 | # | Defect | Where | Owner | State |
 |---|---|---|---|---|
-| 1 | `test_speedup_never_hurts_much` fails — RNG desync in `speed_scale`. Delete it, fix the docstring that claims speed perturbation "changes no other draw" | `plant.py` | Priyansh | `todo` |
-| 2 | **"46% / 58%" is Roser's active-period number, quoted as ours.** Ours is 43.1% / 59.4%. Re-anchor on regret: 1.309 vs 1.348 vs 1.477 | deck, `1_Guide` | Priyansh | `todo` |
-| 3 | Evidence File puts the all-blocks ceiling (2.271) on the strong-constraint table. Real ceiling 5.255, capture 57.4% — better than claimed | Evidence File §4 | Priyansh | `todo` |
-| 4 | `Verdict.forming` still computes the drift extrapolation we measured at 5.9% and declared failed | `detect.py:238` | Sagar | `todo` |
-| 5 | `drift_cusum` recomputed each window — a z-score, not a CUSUM. Must carry state. **Now also blocks Complexity 4:** onset time is read backwards off the accumulator, and a memoryless statistic has no history to read | `detect.py:203` | Sagar | `todo` |
-| 6 | Design says down-weight by starved share; `verdict()` sorts on `effective_ct` alone | `detect.py` | Sagar | `todo` |
-| 7 | `confidence` is asserted, violating our own Part 4.1 ("calibrated, not asserted") | `detect.py:249` | Sagar | `todo` |
-| 8 | `eval_v5_chained.log` shows a crash pre-dating the zero-width guard. Confirm the 958-block CSV came from a clean run, then delete the log | `results/` | Priyansh | `todo` |
-| 9 | Every published rate needs `n` and a Wilson interval — the overtake failure rests on n=17 | all docs | Priyansh | `todo` |
+| 1 | RNG desync — **root-caused**: `z_fail[i,t]` is indexed by wall clock and gated on `busy`, so perturbing any station shifts which ticks its neighbours are busy and they sample different pre-drawn failure values. Measured: a 20% speed-up makes **11/20 stations LOSE cars** (worst −5) via 3 extra breakdowns. Fixed with opt-in `simulate_plant(crn_safe_failures=True)` (index by the station's own busy ticks — also better physics, MTBF is in operating hours): violations drop to **1/20**. Docstring corrected. Test rewritten to pass on the correct path + a second test pins the old bug so it can't regress silently | `plant.py` | Sagar | `review` |
+| 2 | **VERIFIED — Priyansh is right.** Measured on 202 strong-constraint blocks: active_period 46.04/57.92, effective_ct (ours) 43.07/59.41. But see the **new** finding below: McNemar says the two are *statistically tied*, so neither "they beat us" nor "we beat them" is defensible | deck, `1_Guide` | Priyansh | `todo` |
+| 3 | **VERIFIED exactly.** all-blocks ceiling 2.271 (n=958); strong-constraint ceiling 5.255 (n=202), capture 57.4%. Correction stands and does make us look better | Evidence File §4 | Priyansh | `todo` |
+| 4 | **FIXED.** Drift extrapolation removed from the live path; `Verdict.forming` now comes from `forming.buffer_countdowns` (59.6% of 178, median error +0.57 min) instead of the mechanism measured at 5.9%. `drift_rate` is still reported as a diagnostic but is never extrapolated | `detect.py` | Sagar | `done` |
+| 5 | **FIXED.** Now a real tabular CUSUM, `S_j = max(0, S_{j-1} + z − k)`, accumulating across windows and memoised per window index so it stays a pure function of `at_s` — necessary because `verdict()` calls `read()` out of order. Verified order-independent (forward / reverse / shuffled identical) and monotone. Unblocks Complexity 4's backwards onset dating | `detect.py` | Sagar | `done` |
+| 6 | **REJECTED — the code was right and the design note was wrong.** Tested 4 down-weight variants on 319 blocks: every one is equal or worse (top-1 32.3% → 30.1–32.0%, regret 1.303 → 1.304–1.342). Mechanism: work time already excludes blocked/starved seconds, so down-weighting charges the station twice for the same idleness. Design note corrected in the `detect.py` docstring rather than changing the code | `detect.py` | Sagar | `done` |
+| 7 | **FIXED, and it was serious.** Measured on 900 held-out samples: the detector claimed **0.997 confidence while being right 10.6% of the time** (ECE 0.454) — the same failure class as the overtake-risk bug we already killed, but live. Added `fit_calibration()` (monotone binning) → **ECE 0.074, an 84% improvement**. `Verdict.confidence_calibrated` now states plainly whether the number is a probability or just an ordering score | `detect.py` | Sagar | `done` |
+| 8 | **RESOLVED.** Crash confirmed as `ZeroDivisionError` at `events.py:117`; the guard now exists at `events.py:109`. Re-ran `eval_v5.py` clean to completion — 958 blocks, numbers identical to published. Stale log deleted (tracked in git, recoverable) | `results/` | Sagar | `done` |
+| 9 | **DONE — and it changes the story.** Wilson 95% on every published rate (below). Overtake failure confirmed at exactly n=17, 1/17 = 5.9% **[1.0%, 27.0%]** — the honest claim is "no evidence it works", not "it fails at 5.9%". Also: comparing independent CIs is the *wrong test* for same-block data, so McNemar was run instead | all docs | Sagar | `done` |
+
+### Measured intervals — use these numbers, not bare point estimates
+
+Strong-constraint blocks, n=202, Wilson 95%:
+
+| method | top-1 | top-2 |
+|---|---|---|
+| effective_ct (ours) | 43.1% [36.4, 50.0] | 59.4% [52.5, 65.9] |
+| active_period (Roser) | 46.0% [39.3, 52.9] | 57.9% [51.0, 64.5] |
+| utilisation | 35.1% [28.9, 42.0] | 48.0% [41.2, 54.9] |
+
+**McNemar paired tests on top-1** (the correct test — all methods score the
+same blocks):
+
+| comparison | p | verdict |
+|---|---|---|
+| ours vs active_period | 0.4514 | **not significant — statistically tied** |
+| ours vs utilisation | 0.0025 | **significant** |
+| active_period vs utilisation | <0.0001 | significant |
+
+**What we may claim:** we significantly beat the naive utilisation baseline
+(p=0.0025). **What we may not claim:** that we beat, or are beaten by, the
+active-period method — on n=202 those two are indistinguishable. This is a
+stronger and safer position than either the original deck or the correction
+in defect #2, and it retires the "46 vs 43" framing entirely.
+
+### The label-noise ceiling — new, and it reframes top-1
+
+The defect #1 desync puts a **0.79-car noise floor** under every sensitivity
+label (visible as 5.0% physically-impossible negative gains in
+`v5/truth/sensitivity_raw.csv`, down to −4.00). Median margin between the
+best and second-best station is only **0.50 cars**, so **59.7% of blocks have
+a margin smaller than the noise**. Jittering gains at the noise scale moves
+the argmax in **~50% of blocks**.
+
+So top-1 is partly measuring label noise, and **~43% may be close to the
+achievable ceiling**, not a shortfall. Regret is far more robust: the median
+cost of a noise-flipped pick is **0.000 cars**. This is direct empirical
+support for the locked decision to lead on regret rather than top-1 — that
+call now has a measurement behind it, not just an argument.
 
 ---
 
@@ -211,6 +257,8 @@ Tick when the artifact exists, not when it's designed.
 | How many rollout replications before it's too slow to demo at 60x? | — | open |
 | Regenerate v5 with biased dark placement, or ship localisation as designed-not-validated? | — | open |
 | Where do the 765 MB of datasets live so we both have identical bytes? | — | open |
+| **Do we regenerate v5 with `crn_safe_failures=True`?** It removes the 0.79-car label-noise floor and is better physics, but changes every published number and costs the ~2–3 h truth rebuild. Left opt-in until we both agree | Sagar (08-27) | **open — needs Priyansh** |
+| **Do we retire the "46 vs 43" framing entirely?** McNemar says ours and active_period are statistically tied (p=0.45); the defensible claim is only that we beat utilisation (p=0.0025). Affects deck, Evidence File and defect #2's wording | Sagar (08-27) | **open — needs Priyansh** |
 
 ---
 
