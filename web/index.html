@@ -80,6 +80,35 @@ tr.top td:first-child{box-shadow:inset 3px 0 var(--alarm)}
 .alert .done{font:600 10px Consolas,monospace;color:var(--ok)}
 .alert .done.over{color:var(--alarm)}
 footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
+
+/* tabs */
+#tabs{display:flex;gap:0;margin-bottom:10px}
+.tab{font:600 11px "Segoe UI";padding:6px 14px;cursor:pointer;
+     border:1px solid var(--line);border-bottom:none;background:var(--panel2);
+     color:var(--muted)}
+.tab.on{background:var(--panel);color:var(--ink);box-shadow:inset 0 2px var(--act)}
+
+/* manager */
+.wk{margin-bottom:12px}
+.wk h3{font:700 11px Consolas,monospace;margin:0 0 4px}
+.occ{display:flex;align-items:center;gap:6px;margin:2px 0;font:11px Consolas,monospace}
+.occ .id{min-width:34px;font-weight:700}
+.occ .track{flex:1;height:13px;background:var(--panel2);border:1px solid var(--line)}
+.occ .track>i{display:block;height:100%;background:#6d7378}
+.occ.lead .track>i{background:var(--alarm)}
+.occ .pct{min-width:46px;text-align:right}
+
+/* leadership — colour IS allowed here: it is a business dashboard,
+   not a plant HMI. ISA-101 governs the supervisor view only. */
+.card.led{background:#1f2a33;border-color:#16202a;color:#e8edf1}
+.card.led h2{color:#9fb3c4}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:#27343f;border:1px solid #16202a;padding:8px 10px}
+.kpi .n{font:700 24px/1.1 Consolas,monospace;color:#7fd4a8}
+.kpi .l{font-size:10.5px;color:#9fb3c4;margin-top:2px}
+.gap{color:#c8a415}
+.pass{color:var(--ok);font-weight:700}
+.fail{color:var(--alarm);font-weight:700}
 </style>
 </head>
 <body>
@@ -92,7 +121,13 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
 </header>
 <div class="bar"><i id="prog"></i></div>
 
-<div class="grid">
+<nav id="tabs">
+  <button class="tab on"  data-v="sup">Floor supervisor · real time</button>
+  <button class="tab"     data-v="mgr">Plant manager · weekly</button>
+  <button class="tab"     data-v="led">Leadership · investment case</button>
+</nav>
+
+<div id="v-sup" class="grid">
   <div>
     <div class="card">
       <h2>Assembly line — live</h2>
@@ -158,6 +193,57 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
   </div>
 </div>
 
+<!-- ===================== PLANT MANAGER ===================== -->
+<div id="v-mgr" style="display:none">
+  <div class="card">
+    <h2>Who holds the line back — not an average</h2>
+    <p class="muted" style="margin:0 0 8px;font-size:11.5px">
+      The constraint moves ~20× per shift. A mean cycle time across a shift
+      describes no moment of that shift and hides the only actionable fact:
+      <b>which</b> stations hold the line and for <b>how long</b>. This is a
+      constraint-occupancy distribution, which is a scheduling and capex input.
+    </p>
+    <div id="mgr-weeks"></div>
+  </div>
+  <div class="card">
+    <h2>Shift record</h2>
+    <table>
+      <thead><tr><th>Shift</th><th>Vehicles out</th><th>Constraint moves</th>
+      <th>Constraint min</th><th>Alerts</th><th>Loop ms</th></tr></thead>
+      <tbody id="mgr-shifts"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===================== LEADERSHIP ===================== -->
+<div id="v-led" style="display:none">
+  <div class="card led">
+    <h2>Investment case</h2>
+    <div id="led-kpi" class="kpis"></div>
+  </div>
+  <div class="card">
+    <h2>What is measured, and where it comes from</h2>
+    <p class="muted" style="margin:0 0 8px;font-size:11.5px">
+      Every figure names the file that produced it. Anything we cannot source
+      is shown as a gap rather than filled in — that rule is why the numbers
+      below survive questioning.
+    </p>
+    <table>
+      <thead><tr><th>Claim</th><th>Value</th><th>n</th><th>Source</th></tr></thead>
+      <tbody id="led-ev"></tbody>
+    </table>
+  </div>
+  <div class="card">
+    <h2>One twin, three views — reconciliation test</h2>
+    <p class="muted" style="margin:0 0 8px;font-size:11.5px">
+      We prove the three views are the same model at different resolutions
+      rather than asserting it. Each level is totalled independently and
+      compared.
+    </p>
+    <div id="led-rec"></div>
+  </div>
+</div>
+
 <footer>
   Replay of a recorded shift. The loop is causal — it never reads
   <code>t &gt; now</code>. Confidence is an ordering score until calibrated;
@@ -210,6 +296,99 @@ function resolve(i, outcome){
       $('precsub').textContent = `right on ${Math.round(d.precision*d.scored)} of the last ${d.scored} calls`;
     }
   });
+}
+
+/* ---------------- tabs: three views, one record stream ---------------- */
+document.querySelectorAll('.tab').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    const v = b.dataset.v;
+    $('v-sup').style.display = v==='sup' ? 'grid':'none';
+    $('v-mgr').style.display = v==='mgr' ? 'block':'none';
+    $('v-led').style.display = v==='led' ? 'block':'none';
+    if(v!=='sup') loadRollup();
+  };
+});
+
+let ROLLUP = null;
+function loadRollup(){
+  if(ROLLUP) return renderRollup();
+  fetch('/rollup').then(r=>r.json()).then(d=>{
+    if(d.error){
+      $('mgr-weeks').innerHTML = `<span class="muted">${d.error} — run <code>${d.fix}</code></span>`;
+      $('led-kpi').innerHTML   = `<span class="muted">${d.error}</span>`;
+      return;
+    }
+    ROLLUP = d; renderRollup();
+  });
+}
+
+function renderRollup(){
+  const d = ROLLUP;
+
+  // ---- manager: occupancy distribution per week
+  $('mgr-weeks').innerHTML = d.weeks.map(w=>{
+    const max = Math.max(...w.top_constraints.map(t=>t.share), 1);
+    return `<div class="wk">
+      <h3>Week ${w.week} · ${w.n_shifts} shifts · ${w.units_out} vehicles ·
+          ${w.constraint_moves} constraint moves</h3>
+      ${w.top_constraints.map((t,i)=>`
+        <div class="occ ${i===0?'lead':''}">
+          <span class="id">${t.station}</span>
+          <span class="track"><i style="width:${100*t.share/max}%"></i></span>
+          <span class="pct">${t.share}%</span>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+
+  $('mgr-shifts').innerHTML = d.shifts.map(s=>`
+    <tr><td>${s.run}</td><td>${s.units_out}</td><td>${s.constraint_moves}</td>
+    <td>${Math.round(s.constraint_minutes)}</td><td>${s.alerts}</td>
+    <td>${s.mean_latency_ms}</td></tr>`).join('');
+
+  // ---- leadership
+  const L = d.leadership;
+  $('led-kpi').innerHTML = `
+    <div class="kpi"><div class="n">${L.units_out}</div>
+      <div class="l">vehicles across ${L.shifts_observed} shifts</div></div>
+    <div class="kpi"><div class="n">${L.mean_units_per_shift}</div>
+      <div class="l">mean vehicles / shift</div></div>
+    <div class="kpi"><div class="n">${L.mean_constraint_moves}</div>
+      <div class="l">constraint moves / shift</div></div>
+    <div class="kpi"><div class="n">${Math.round(L.constraint_minutes)}</div>
+      <div class="l">constraint-minutes observed</div></div>`;
+
+  $('led-ev').innerHTML = Object.values(L.evidence).map(e=>{
+    if(e.value===null) return `<tr>
+      <td>${e.label}</td>
+      <td class="gap">not measured</td><td>—</td>
+      <td class="muted" style="font-size:10.5px">${e.reason}</td></tr>`;
+    return `<tr><td>${e.label}</td>
+      <td><b>${e.value}${e.unit==='%'?'%':''}</b>
+        ${e.unit && e.unit!=='%'?`<span class="muted"> ${e.unit}</span>`:''}</td>
+      <td>${e.n}</td>
+      <td class="muted" style="font-size:10.5px">${e.source}</td></tr>`;
+  }).join('');
+
+  const R = d.reconciliation;
+  $('led-rec').innerHTML = `
+    <div style="margin-bottom:6px">
+      <span class="${R.passes?'pass':'fail'}">${R.passes?'PASS':'FAIL'}</span>
+      <span class="muted"> — ${R.statement}</span>
+    </div>
+    <table><thead><tr><th>Quantity</th><th>Supervisor records</th>
+      <th>Manager weeks</th><th>Leadership</th></tr></thead>
+    <tbody>
+      <tr><td>constraint-minutes</td>
+        <td>${R.constraint_minutes.supervisor_records}</td>
+        <td>${R.constraint_minutes.manager_weeks}</td>
+        <td>${R.constraint_minutes.leadership}</td></tr>
+      <tr><td>vehicles out</td>
+        <td>${R.units_out.supervisor_records}</td>
+        <td>${R.units_out.manager_weeks}</td>
+        <td>${R.units_out.leadership}</td></tr>
+    </tbody></table>`;
 }
 
 const es = new EventSource('/stream');

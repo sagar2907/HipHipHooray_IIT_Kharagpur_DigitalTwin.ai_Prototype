@@ -1,0 +1,603 @@
+{
+ "generated_from": "runs",
+ "n_shifts": 15,
+ "step_s": 300,
+ "shifts": [
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 279,
+   "constraint_moves": 15,
+   "occupancy_min": {
+    "S04": 55.0,
+    "S12": 30.0,
+    "S11": 5.0,
+    "S19": 5.0,
+    "S05": 30.0,
+    "S20": 305.0,
+    "S03": 20.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 26,
+   "mean_latency_ms": 31.4,
+   "run": "L1_run_001"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 288,
+   "constraint_moves": 17,
+   "occupancy_min": {
+    "S12": 5.0,
+    "S07": 5.0,
+    "S04": 70.0,
+    "S20": 75.0,
+    "S01": 20.0,
+    "S10": 15.0,
+    "S03": 30.0,
+    "S19": 230.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 29,
+   "mean_latency_ms": 32.0,
+   "run": "L1_run_002"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 336,
+   "constraint_moves": 27,
+   "occupancy_min": {
+    "S20": 40.0,
+    "S09": 35.0,
+    "S01": 80.0,
+    "S08": 200.0,
+    "S10": 20.0,
+    "S19": 10.0,
+    "S18": 25.0,
+    "S07": 5.0,
+    "S03": 30.0,
+    "S11": 5.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 28,
+   "mean_latency_ms": 32.7,
+   "run": "L1_run_003"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 306,
+   "constraint_moves": 18,
+   "occupancy_min": {
+    "S19": 15.0,
+    "S16": 60.0,
+    "S20": 60.0,
+    "S09": 35.0,
+    "S07": 185.0,
+    "S03": 20.0,
+    "S13": 35.0,
+    "S14": 10.0,
+    "S12": 5.0,
+    "S17": 25.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 28,
+   "mean_latency_ms": 31.9,
+   "run": "L1_run_004"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 312,
+   "constraint_moves": 23,
+   "occupancy_min": {
+    "S17": 55.0,
+    "S13": 30.0,
+    "S02": 30.0,
+    "S08": 35.0,
+    "S12": 180.0,
+    "S03": 20.0,
+    "S18": 30.0,
+    "S15": 30.0,
+    "S11": 25.0,
+    "S19": 15.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 31,
+   "mean_latency_ms": 32.7,
+   "run": "L1_run_005"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 292,
+   "constraint_moves": 23,
+   "occupancy_min": {
+    "S03": 55.0,
+    "S14": 25.0,
+    "S08": 220.0,
+    "S06": 45.0,
+    "S04": 15.0,
+    "S16": 35.0,
+    "S12": 35.0,
+    "S15": 5.0,
+    "S19": 5.0,
+    "S13": 10.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 33,
+   "mean_latency_ms": 32.3,
+   "run": "L1_run_006"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 89,
+   "units_out": 311,
+   "constraint_moves": 25,
+   "occupancy_min": {
+    "S09": 15.0,
+    "S14": 35.0,
+    "S20": 60.0,
+    "S15": 65.0,
+    "S02": 10.0,
+    "S05": 45.0,
+    "S08": 165.0,
+    "S11": 50.0
+   },
+   "constraint_minutes": 445.0,
+   "alerts": 33,
+   "mean_latency_ms": 32.2,
+   "run": "L1_run_007"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 294,
+   "constraint_moves": 15,
+   "occupancy_min": {
+    "S09": 55.0,
+    "S08": 10.0,
+    "S12": 15.0,
+    "S16": 25.0,
+    "S03": 30.0,
+    "S18": 25.0,
+    "S14": 5.0,
+    "S11": 280.0,
+    "S20": 5.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 26,
+   "mean_latency_ms": 31.9,
+   "run": "L1_run_008"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 291,
+   "constraint_moves": 22,
+   "occupancy_min": {
+    "S14": 60.0,
+    "S03": 45.0,
+    "S09": 30.0,
+    "S18": 15.0,
+    "S17": 10.0,
+    "S05": 10.0,
+    "S19": 25.0,
+    "S06": 235.0,
+    "S08": 20.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 28,
+   "mean_latency_ms": 32.2,
+   "run": "L1_run_009"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 316,
+   "constraint_moves": 36,
+   "occupancy_min": {
+    "S20": 15.0,
+    "S06": 30.0,
+    "S19": 75.0,
+    "S14": 25.0,
+    "S13": 15.0,
+    "S17": 15.0,
+    "S11": 25.0,
+    "S01": 15.0,
+    "S10": 50.0,
+    "S15": 115.0,
+    "S18": 55.0,
+    "S08": 5.0,
+    "S02": 5.0,
+    "S03": 5.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 25,
+   "mean_latency_ms": 32.1,
+   "run": "L1_run_010"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 288,
+   "constraint_moves": 22,
+   "occupancy_min": {
+    "S09": 45.0,
+    "S18": 15.0,
+    "S11": 35.0,
+    "S02": 20.0,
+    "S01": 30.0,
+    "S13": 35.0,
+    "S16": 5.0,
+    "S20": 10.0,
+    "S07": 35.0,
+    "S15": 30.0,
+    "S14": 10.0,
+    "S17": 180.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 32,
+   "mean_latency_ms": 31.3,
+   "run": "L1_run_011"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 293,
+   "constraint_moves": 25,
+   "occupancy_min": {
+    "S08": 235.0,
+    "S18": 45.0,
+    "S04": 10.0,
+    "S09": 35.0,
+    "S19": 5.0,
+    "S06": 45.0,
+    "S16": 30.0,
+    "S20": 5.0,
+    "S10": 25.0,
+    "S17": 15.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 32,
+   "mean_latency_ms": 31.8,
+   "run": "L1_run_012"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 297,
+   "constraint_moves": 17,
+   "occupancy_min": {
+    "S18": 30.0,
+    "S20": 90.0,
+    "S04": 45.0,
+    "S01": 15.0,
+    "S13": 5.0,
+    "S16": 45.0,
+    "S07": 5.0,
+    "S05": 200.0,
+    "S08": 15.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 27,
+   "mean_latency_ms": 32.2,
+   "run": "L1_run_013"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 87,
+   "units_out": 266,
+   "constraint_moves": 12,
+   "occupancy_min": {
+    "S06": 25.0,
+    "S10": 25.0,
+    "S01": 25.0,
+    "S11": 5.0,
+    "S04": 15.0,
+    "S05": 35.0,
+    "S19": 260.0,
+    "S16": 35.0,
+    "S08": 10.0
+   },
+   "constraint_minutes": 435.0,
+   "alerts": 20,
+   "mean_latency_ms": 31.4,
+   "run": "L1_run_014"
+  },
+  {
+   "ticks": 96,
+   "live_ticks": 90,
+   "units_out": 262,
+   "constraint_moves": 18,
+   "occupancy_min": {
+    "S09": 5.0,
+    "S13": 30.0,
+    "S01": 15.0,
+    "S18": 35.0,
+    "S19": 30.0,
+    "S14": 260.0,
+    "S15": 10.0,
+    "S03": 40.0,
+    "S16": 25.0
+   },
+   "constraint_minutes": 450.0,
+   "alerts": 29,
+   "mean_latency_ms": 31.3,
+   "run": "L1_run_015"
+  }
+ ],
+ "weeks": [
+  {
+   "n_shifts": 5,
+   "units_out": 1521,
+   "constraint_minutes": 2250.0,
+   "constraint_moves": 100,
+   "occupancy_min": {
+    "S04": 125.0,
+    "S12": 220.0,
+    "S11": 35.0,
+    "S19": 275.0,
+    "S05": 30.0,
+    "S20": 480.0,
+    "S03": 120.0,
+    "S07": 195.0,
+    "S01": 100.0,
+    "S10": 35.0,
+    "S09": 70.0,
+    "S08": 235.0,
+    "S18": 55.0,
+    "S16": 60.0,
+    "S13": 65.0,
+    "S14": 10.0,
+    "S17": 80.0,
+    "S02": 30.0,
+    "S15": 30.0
+   },
+   "top_constraints": [
+    {
+     "station": "S20",
+     "minutes": 480.0,
+     "share": 21.3
+    },
+    {
+     "station": "S19",
+     "minutes": 275.0,
+     "share": 12.2
+    },
+    {
+     "station": "S08",
+     "minutes": 235.0,
+     "share": 10.4
+    },
+    {
+     "station": "S12",
+     "minutes": 220.0,
+     "share": 9.8
+    },
+    {
+     "station": "S07",
+     "minutes": 195.0,
+     "share": 8.7
+    },
+    {
+     "station": "S04",
+     "minutes": 125.0,
+     "share": 5.6
+    }
+   ],
+   "mean_units_per_shift": 304.2,
+   "week": 1,
+   "runs": [
+    "L1_run_001",
+    "L1_run_002",
+    "L1_run_003",
+    "L1_run_004",
+    "L1_run_005"
+   ]
+  },
+  {
+   "n_shifts": 5,
+   "units_out": 1504,
+   "constraint_minutes": 2245.0,
+   "constraint_moves": 121,
+   "occupancy_min": {
+    "S03": 135.0,
+    "S14": 150.0,
+    "S08": 420.0,
+    "S06": 310.0,
+    "S04": 15.0,
+    "S16": 60.0,
+    "S12": 50.0,
+    "S15": 185.0,
+    "S19": 105.0,
+    "S13": 25.0,
+    "S09": 100.0,
+    "S20": 80.0,
+    "S02": 15.0,
+    "S05": 55.0,
+    "S11": 355.0,
+    "S18": 95.0,
+    "S17": 25.0,
+    "S01": 15.0,
+    "S10": 50.0
+   },
+   "top_constraints": [
+    {
+     "station": "S08",
+     "minutes": 420.0,
+     "share": 18.7
+    },
+    {
+     "station": "S11",
+     "minutes": 355.0,
+     "share": 15.8
+    },
+    {
+     "station": "S06",
+     "minutes": 310.0,
+     "share": 13.8
+    },
+    {
+     "station": "S15",
+     "minutes": 185.0,
+     "share": 8.2
+    },
+    {
+     "station": "S14",
+     "minutes": 150.0,
+     "share": 6.7
+    },
+    {
+     "station": "S03",
+     "minutes": 135.0,
+     "share": 6.0
+    }
+   ],
+   "mean_units_per_shift": 300.8,
+   "week": 2,
+   "runs": [
+    "L1_run_006",
+    "L1_run_007",
+    "L1_run_008",
+    "L1_run_009",
+    "L1_run_010"
+   ]
+  },
+  {
+   "n_shifts": 5,
+   "units_out": 1406,
+   "constraint_minutes": 2235.0,
+   "constraint_moves": 94,
+   "occupancy_min": {
+    "S09": 85.0,
+    "S18": 125.0,
+    "S11": 40.0,
+    "S02": 20.0,
+    "S01": 85.0,
+    "S13": 70.0,
+    "S16": 140.0,
+    "S20": 105.0,
+    "S07": 40.0,
+    "S15": 40.0,
+    "S14": 270.0,
+    "S17": 195.0,
+    "S08": 260.0,
+    "S04": 70.0,
+    "S19": 295.0,
+    "S06": 70.0,
+    "S10": 50.0,
+    "S05": 235.0,
+    "S03": 40.0
+   },
+   "top_constraints": [
+    {
+     "station": "S19",
+     "minutes": 295.0,
+     "share": 13.2
+    },
+    {
+     "station": "S14",
+     "minutes": 270.0,
+     "share": 12.1
+    },
+    {
+     "station": "S08",
+     "minutes": 260.0,
+     "share": 11.6
+    },
+    {
+     "station": "S05",
+     "minutes": 235.0,
+     "share": 10.5
+    },
+    {
+     "station": "S17",
+     "minutes": 195.0,
+     "share": 8.7
+    },
+    {
+     "station": "S16",
+     "minutes": 140.0,
+     "share": 6.3
+    }
+   ],
+   "mean_units_per_shift": 281.2,
+   "week": 3,
+   "runs": [
+    "L1_run_011",
+    "L1_run_012",
+    "L1_run_013",
+    "L1_run_014",
+    "L1_run_015"
+   ]
+  }
+ ],
+ "leadership": {
+  "shifts_observed": 15,
+  "weeks": 3,
+  "units_out": 4431,
+  "constraint_minutes": 6730.0,
+  "mean_units_per_shift": 295.4,
+  "mean_constraint_moves": 21.0,
+  "evidence": {
+   "top1_strong": {
+    "value": 43.1,
+    "n": 202,
+    "source": "results/eval_v5.csv",
+    "unit": "%",
+    "label": "top-1 on strong constraints"
+   },
+   "top2_strong": {
+    "value": 59.4,
+    "n": 202,
+    "source": "results/eval_v5.csv",
+    "unit": "%",
+    "label": "top-2 on strong constraints"
+   },
+   "regret_all": {
+    "value": 1.309,
+    "n": 958,
+    "source": "results/eval_v5.csv",
+    "unit": "cars/block",
+    "label": "regret, all blocks (ours)"
+   },
+   "regret_utilisation": {
+    "value": 1.477,
+    "n": 958,
+    "source": "results/eval_v5.csv",
+    "unit": "cars/block",
+    "label": "regret, all blocks (utilisation baseline)"
+   },
+   "forming_n": {
+    "value": 178,
+    "n": 178,
+    "source": "results/forming_buffer_countdown.csv",
+    "unit": "warnings",
+    "label": "buffer-countdown warnings measured"
+   },
+   "conwip_lead_time": {
+    "value": null,
+    "source": null,
+    "unit": "%",
+    "label": "CONWIP lead-time reduction",
+    "reason": "claimed at 36% in the design notes, but no file in results/ produces it - must be re-measured or dropped before it is presented as ours"
+   }
+  }
+ },
+ "reconciliation": {
+  "passes": true,
+  "constraint_minutes": {
+   "supervisor_records": 6730.0,
+   "manager_weeks": 6730.0,
+   "leadership": 6730.0
+  },
+  "units_out": {
+   "supervisor_records": 4431,
+   "manager_weeks": 4431,
+   "leadership": 4431
+  },
+  "statement": "leadership total == sum of manager weeks == sum of supervisor records"
+ }
+}

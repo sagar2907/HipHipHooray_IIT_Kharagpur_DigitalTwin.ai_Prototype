@@ -90,6 +90,19 @@ def resolve(index: int, outcome: str):
                          "scored": loop.ledger.scored})
 
 
+@app.get("/rollup")
+def rollup():
+    """Manager + leadership views. Precomputed by scripts/build_rollup.py so
+    every figure is traceable to a file and regenerable by one command."""
+    p = os.path.join(HERE, "..", "results", "rollup.json")
+    if not os.path.exists(p):
+        return JSONResponse(
+            {"error": "no rollup yet",
+             "fix": "python scripts/build_rollup.py --runs 15"}, status_code=404)
+    with open(p, encoding="utf-8") as fh:
+        return JSONResponse(json.load(fh))
+
+
 @app.get("/alerts")
 def alerts():
     loop: TwinLoop = STATE["loop"]
