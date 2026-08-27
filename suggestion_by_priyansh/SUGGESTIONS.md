@@ -271,6 +271,122 @@ natural experiment or ruled physically plausible.
 
 ---
 
+## Complexity 3 — PLC risk and maintenance windows
+
+> *"Modifying live production systems (PLCs, line control logic) carries real operational
+> risk, and most plants only allow retrofits during scheduled, infrequent maintenance
+> windows."*
+
+**Status:** `open` — needs Sagar's review. The read-only enforcement test touches `tests/`
+(shared); shadow mode falls out of Workstream B (his).
+
+Two separate claims in one sentence: a **risk** constraint and a **timing** constraint.
+
+### 3.1 The read-only boundary, made credible
+
+We already say *the twin advises, never writes*. Three things turn that from an intention
+into something a plant engineer believes.
+
+**Use the standard vocabulary.** Under ISA-95 / the Purdue model, the twin reads at Level 3
+(MES, historian) and subscribes read-only at Level 2 (SCADA). It never touches Level 0–1
+(sensors, actuators, **PLCs, control logic**).
+
+**Explain why it matters operationally, not architecturally.** This table is the argument:
+
+| Touching Level 1/2 needs | Reading at Level 3 needs |
+|---|---|
+| Safety case re-validation | Network access |
+| Possible functional-safety re-certification | Cybersecurity review |
+| Regression testing of control logic | Historian permissions |
+| A shutdown window, safety-engineering sign-off | — |
+| **Quarters to years** | **Weeks** |
+
+**Enforce it in code — don't assert it.** Our own discipline (*prove the boundary, don't
+claim it*) applied to integration: configure the OPC-UA session read-only, firewall to
+outbound-only with no inbound to OT, and **write a test that fails if anyone ever adds a
+write path**. Then in the pitch we show the test rather than ask to be believed.
+
+### 3.2 Three risk classes — the distinction most solutions blur
+
+| Class | What it is | Risk | Needs |
+|---|---|---|---|
+| **1. Passive tap** | Subscribe to data already published | none | network access |
+| **2. Additive sensing** | Sensor bolted on, publishing to **our** gateway | low | a window, a technician |
+| **3. Control modification** | Change setpoints or logic | high | **never** |
+
+The brief asks about **retrofits** — class 2, and class 2 is achievable. Most write-ups
+treat any hardware change as class 3 and conclude nothing can be done.
+
+**Design rule:** every sensor we propose publishes to our own gateway, **never into the
+PLC**. Same device either way — but on our network it is a technician job in a routine
+window; wired into a PLC input card it is a controls-engineering job with a safety sign-off.
+
+*(The analogy that lands: a dashcam fits in 20 minutes, self-driving takes years of
+certification. Same car — one watches, one acts.)*
+
+### 3.3 The question a plant-experienced judge will ask
+
+*"How did you get network access, and who signed off?"*
+
+OT is segmented from IT; the governing standard is **IEC 62443** and the accepted pattern is
+a DMZ with controlled traffic. Read-only makes this far easier — the twin runs IT-side,
+reads a historian replica in the DMZ, holds read-scoped credentials, and opens **no inbound
+connection to OT at all**. A system that cannot write has a much simpler threat model, which
+is a second independent reason the boundary is right.
+
+### 3.4 The maintenance window as a planning object
+
+Extends the sensor scheduling from Complexity 1 in two ways.
+
+**Everything requiring a stop goes in one plan** — not just sensors but buffer resizing,
+station rebalancing, adding a parallel server. Batched by window, ranked, with cost of deferral.
+
+**And the twin plans the window itself.** A shutdown has finite hours and technicians, so
+you cannot do everything. It is a selection problem, and the twin is the only system holding
+the value of each candidate job:
+
+> *"March window: 3 days, 4 technicians. Optimal set is these five jobs — closes ₹38L of
+> annual exposure. The three deferred to September cost ₹4L over the wait."*
+
+### 3.5 Deploying the twin itself without disruption
+
+The solutioning area asks about deploying **the twin**, not the sensors. Four phases:
+
+| Phase | What happens | Risk |
+|---|---|---|
+| **1. Shadow** | Runs, predicts, shows nobody. Compared afterwards against what happened | zero |
+| **2. One supervisor** | One person sees it, free to ignore it; ledger records action and outcome | zero |
+| **3. Floor-wide advisory** | Rolled out once the ledger shows precision holds | zero |
+| **4. Closed loop** | **Never** | — |
+
+**Phase 1 is nearly free** — our replay driver *is* shadow mode. Replaying a recorded shift
+and comparing recommendations against the actual outcome is exactly what a shadow deployment
+does, so Workstream B produces it as a by-product.
+
+This phasing is also the spine of the **phased roadmap**, a named Round 2 deliverable we
+don't currently have — so this clause and that gap close together.
+
+### 3.6 What goes in the prototype
+
+| Item | State |
+|---|---|
+| Architecture figure — ISA-95 levels, **directional arrows** | ❌ new — a diagram, not code |
+| **Read-only enforcement test** — fails if a write path is added | ❌ new, tiny, high credibility |
+| **Window planner** — given capacity, select the best set of jobs | ❌ new, small |
+| **Shadow mode** as an operating mode of the loop | ✅ nearly free — it's replay |
+| Sensor recommendations tagged *"our gateway, no PLC change"* | ⚠️ extend the Complexity 1 output |
+
+### 3.7 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Complexity 3 — PLC risk + maintenance windows | ✅ both halves |
+| Solutioning: integration approach, *"without disrupting ongoing operations"* | ✅ the four-phase rollout |
+| Reference parameter — instrumentation only in scheduled windows | ✅ the window planner |
+| Deliverable: **phased roadmap** | ✅ partial — this is its spine |
+
+---
+
 # Part B — Numbered proposals
 
 ## 1 — Sequencing: build the demo first, not last
