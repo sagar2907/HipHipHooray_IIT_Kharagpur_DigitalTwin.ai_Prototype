@@ -84,6 +84,54 @@ Move the `▲` marker as workstreams complete. Fill the `_tbd_` dates once the d
 
 ---
 
+## THE PLAN — 3 days, built backwards from the demo
+
+**Principle: the demo is the spec.** We have 13 design documents and a
+verified engine. We do not need more capability — we need one honest,
+running thing plus the story we already wrote. So we fix the 5 minutes a
+judge sees, then build only what those 5 minutes require.
+
+### The 5 minutes (write this first, build to it)
+
+| # | Beat | What it proves | Needs |
+|---|---|---|---|
+| 1 | A real shift replays at 60x | It is a **twin, not a shadow** — the whole Round 2 claim | `loop.py` |
+| 2 | The constraint **moves** ~6x a shift; utilisation names one station all day | Our core Round 1 finding, now live | ranking panel |
+| 3 | "S12 forming, ~11 min" — then it happens | Prediction, not description | buffer countdown *(already built)* |
+| 4 | Evidence panel: blocked upstream, starved downstream, effective CT | **Not asserted** — the judge sees the reasoning | `verdict.ranking` *(already there)* |
+| 5 | Ledger: "right on 24 of the last 34" | Answers "false alarms erode trust" | C-stub |
+| 6 | It **advises, never writes**; a person confirms | The ISA-95 boundary we locked | a button + a label |
+| 7 | Worth N cars / CONWIP: same throughput, 36% less lead time, zero capex | ROI, and it is measured | numbers we already hold |
+
+Anything not serving beats 1–7 is cut. That is the whole scope rule.
+
+### Day plan
+
+| When | Sagar | Priyansh |
+|---|---|---|
+| **27 Aug, tonight** | **The vertical slice.** `record.py` + `loop.py` + FastAPI/SSE + one ugly page. Gate: **a shift replays at 60x in a browser.** Ugly is fine; integrated is not optional | Launch the **2 transfer runs** in the background and leave them. Then start the **deck skeleton** — beats 1–7 as slide titles |
+| **28 Aug** | Beats 2–4: ranking panel, evidence panel, forming warnings. It should look like a plant tool by tonight | Doc errors #2/#3 into deck + Evidence File. Feed transfer numbers in when they land. Keep writing the deck |
+| **29 Aug** | Beat 5 (ledger stub) + beat 6 (confirm button). **ISA-101 pass**: grayscale, colour only on deviation | Business case (beat 7) from our own outputs. Deck to full draft |
+| **30 Aug** | **Freeze by midday.** Screen-record the 5 minutes as insurance against a live failure | Deck final. Submit with time to spare |
+
+### Rules that protect the deadline
+
+1. **Integrate on day 1, not day 3.** The slice runs end-to-end tonight or the plan changes tomorrow, not on the 29th.
+2. **Record the demo on the 30th regardless.** A recording cannot crash in front of a judge.
+3. **No new science.** Every number in the demo already exists in `results/`. If a beat needs a number we do not have, cut the beat.
+4. **Ugly and working beats pretty and partial.** Styling is the 29th, and only after beats 1–6 run.
+5. **If we slip a day, cut in this order:** beat 5, then beat 3, then beat 7. **Never beats 1, 2, 4** — they are the twin, the finding, and the honesty.
+
+### Why this fits
+
+B's engine is **done and verified** (causal 13/13, 6 ms/verdict, ~800x the
+headroom the 60x gate needs). The forming mechanism, the evidence, the
+detector and every headline number already exist and are measured. The
+remaining work is a replay driver, a ticker, and one page — plus a deck
+assembled from 13 documents that are already written.
+
+---
+
 ## Right now
 
 _Last updated: 2026-08-27 by **Sagar**_
