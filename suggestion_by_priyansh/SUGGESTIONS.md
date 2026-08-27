@@ -668,6 +668,110 @@ constraint but all of which decide whether the tool is still in use in month thr
 
 ---
 
+## Complexity 6 — Scaling across lines, plants and sites
+
+> *"Extending a solution beyond a single line or plant means accounting for real variation
+> in layout, equipment vintage, and sensor maturity across different sites."*
+
+**Status:** `open` — needs Sagar's review. Workstream D (mine). **Two of the three
+experiments need no new code and have never been run.**
+
+Everyone claims their solution generalises. The difference is whether the experiment was run.
+
+### 6.1 Ask "how long until it works", not "does it work"
+
+"It transfers" is three questions: **zero-shot** (calibrate on A, deploy on B cold),
+**few-shot** (how much B data before recovery), and **ceiling** (fully fitted on B).
+
+The useful output is not one number but a **transfer curve** — performance against amount of
+target-line data. And the curve *is the commissioning estimate*:
+
+> *"70% of full performance on day one, 90% after a week, 100% after a month."*
+
+That is the sentence a customer actually wants, and it is the same experiment either way.
+The method transfers even though the local knowledge does not — like a driving instructor
+moving city: the teaching skill comes along, the knowledge of which junctions are dangerous
+has to be relearned.
+
+### 6.2 What actually breaks, per axis
+
+| Axis | Variation | Risk |
+|---|---|---|
+| **Layout** | Station count | low — windows already in units, not seconds |
+| | Merges / feeders | low — topology is config |
+| | Buffer capacities | **medium** — our own finding was that tighter buffers are what made the constraint visible, so the distribution changes the dynamics |
+| | **Parallel stations** | **high** — breaks the pure-series assumption under the arrow / turning-point methods. L3 exists for exactly this and has never been run |
+| **Vintage** | MTBF, MTTR, variance | low — fitted per line |
+| | Protocols, tag granularity | low — adapter |
+| | **Sampling rate** | **high, and subtle** — see below |
+| | Genuinely different failure modes | **classifier does not transfer**, must be refit per equipment family |
+| **Sensors** | Fewer channels | handled — health score aggregates what's present, confidence drops (C1) |
+| | No PLC state tags | the `use_states=False` path |
+| | Higher dark density | tier ladder handles it, but **measure the degradation** |
+
+**On sampling rate:** if line A reports per unit and line B once a shift, that is not the
+same detector with different parameters — **some detectors stop working**, because CUSUM on
+three samples a day cannot accumulate. That is a capability boundary, not a tuning problem,
+and the observability map should say so rather than implying a setting fixes it.
+
+### 6.3 What makes two lines "close enough"
+
+If we claim transfer we need a **distance between lines**. Six cheap dimensions:
+
+`station count · takt · buffer capacity distribution · instrumented fraction · variant count · segment mix`
+
+Then plot transfer performance against that distance, giving a real claim —
+*"transfer holds within X; beyond it, refit"* — rather than "it should generalise".
+
+### 6.4 Rollout economics — costs don't divide evenly per line
+
+| Cost | Charged |
+|---|---|
+| Platform (detectors, model, interfaces) | **once, ever** |
+| Cybersecurity + network review | **per site** |
+| Adapter writing | per line (days) |
+| Fitting period | per line (weeks, but passive) |
+| Threshold calibration | per line |
+
+Three genuinely different tiers: **first line ever** (platform + site + line), **second line
+same plant** (line only — network already approved), **first line new plant** (site + line,
+no platform). **Payback shortens sharply after line one, and again after plant one** — a far
+more credible rollout case than a flat per-line figure.
+
+### 6.5 What we can run today — the actionable part
+
+| Experiment | Effort | Status |
+|---|---|---|
+| **Layout transfer** — calibrate on L1, test on L2 / L3 / L4 | already built | ❌ **never run** |
+| **Sensor maturity** — `Detector(run, use_states=False)`, rich → poor | **one flag** | ❌ **never run** |
+| Equipment vintage cohorts | new generator work | ❌ not modelled |
+
+The first two produce publishable transfer numbers with essentially no new code. Since "how
+would this extend to other sites" is a named solutioning area that we currently answer with
+an *argument* rather than a *measurement*, **this is the highest value-per-hour item anywhere
+on our list.**
+
+### 6.6 Decompose the transfer loss — don't report one number
+
+| What degraded | Meaning | Severity |
+|---|---|---|
+| **Ranking** — picks the wrong station | The method doesn't transfer | **serious** |
+| **Calibration** — right station, wrong confidence | Needs a week of local data | **minor** |
+
+Same drop in score, completely different problem and completely different fix. Report
+Δ regret zero-shot, **which component degraded**, and shifts-to-recovery.
+
+### 6.7 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Complexity 6 — layout, vintage, sensor maturity | ⚠️ two axes measurable today; vintage needs generator work |
+| Solutioning: scalability & ROI | ✅ transfer curve + three-tier rollout economics |
+| Gap list: layout transfer, sensor-maturity transfer | ✅ specified, **and runnable now** |
+| Deliverable: business case | ⚠️ partial — rollout tiers are its scaling half |
+
+---
+
 # Part B — Numbered proposals
 
 ## 1 — Sequencing: build the demo first, not last

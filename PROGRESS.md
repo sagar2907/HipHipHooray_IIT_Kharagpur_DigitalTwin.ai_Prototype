@@ -42,6 +42,7 @@
 | 2026-08-25 | **Complexity 3 solved and written up** — PLC risk, maintenance windows | Priyansh | `done` |
 | 2026-08-25 | **Complexity 4 solved and written up** — containment, forensics, stop-or-continue | Priyansh | `done` |
 | 2026-08-25 | **Complexity 5 solved and written up** — three stakeholder views | Priyansh | `done` |
+| 2026-08-25 | **Complexity 6 solved and written up** — scaling across lines and plants | Priyansh | `done` |
 | _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
 | _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
@@ -62,7 +63,7 @@ _Last updated: 2026-08-25 by **Priyansh**_
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
 | **Sagar** | reviewed repo + Priyansh's audit; filed `suggestion_by_sagar/`; **B (the loop)** not yet started | — | — | — |
-| **Priyansh** | Complexities 1-5 written up in `suggestion_by_priyansh/` Part A. Next: Complexities 6-7, then **A (clear the ground)** | `main` | — | — |
+| **Priyansh** | Complexities 1-6 written up in `suggestion_by_priyansh/` Part A. Next: Complexity 7, then **A (clear the ground)** | `main` | — | — |
 
 **Sagar — two schema decisions waiting on you** in Part A of my suggestions file: a
 `manual_check` event type, and a fourth provenance value `attested`. Both touch `record.py`.
@@ -80,6 +81,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-25 | Priyansh | **Complexity 6 worked through** — scaling. Reframed as "how long until it works" (a transfer curve, which *is* the commissioning estimate) rather than yes/no. Three-tier rollout economics. **Flags that two of the three transfer experiments need no new code and have never been run** — layout (L1-L4) and sensor maturity (`use_states=False`). Highest value-per-hour item we have. | — |
 | 2026-08-25 | Priyansh | **Complexity 5 worked through** — three stakeholder views. Key move: prove "one twin" with a *reconciliation test* rather than asserting it. Confidence thresholds differ per view because the cost of being wrong differs. The manager's view is a different statistic, not an average — averaging a constraint that moves 6x/shift destroys the information. Leadership must see the negative results. | — |
 | 2026-08-25 | Priyansh | **Complexity 4 worked through** — late-surfacing defects. Onset read backwards off the CUSUM accumulator (so defect #5 now blocks containment, not just detection); 3-band containment partitioned by unit location, since a car on the line costs ~1/100th of one at a customer; replay as flight recorder; backward attribution reuses C2's engine. **Stop-or-continue corrected** — escape route decides, not bottleneck status, and a station stop inside the downstream buffer is free. | — |
 | 2026-08-25 | Priyansh | **Complexity 3 worked through** — PLC risk and maintenance windows. Read-only boundary justified in ISA-95 terms and *enforced by a test* rather than asserted; three risk classes with additive sensing separated from control modification; the window as a job-selection problem; four-phase rollout (shadow -> one supervisor -> floor -> never closed-loop). Shadow mode falls out of the replay driver for free, and the phasing is the spine of the phased-roadmap deliverable. | — |
@@ -103,7 +105,7 @@ Append-only, newest first. Both of us add to this.
 | **A** | Clear the ground | Priyansh | `todo` | 11/11 tests green; noise floor published; 2 doc errors fixed |
 | **B** | The loop (`record.py`, `loop.py`) | Sagar | `todo` | A shift replays at 60x in a browser, from a loop that never sees `t > now` |
 | **C** | Alert contract + trust ledger | Sagar | `todo` | Every alert carries all 5 fields; calibration within ±10 pts; ledger shows running precision |
-| **D** | 40 stations + transfer tests | Priyansh | `todo` | Layout-transfer number, sensor-maturity number, classifier scored on firewall set |
+| **D** | 40 stations + transfer tests | Priyansh | `todo` | Layout-transfer and sensor-maturity numbers **decomposed** (ranking loss vs calibration loss — they mean different things), plus classifier scored on the firewall set |
 | **E** | Three stakeholder views | Both | `todo` | Three views, one record stream, switchable live, **and the reconciliation test passing** (leadership total == sum of manager weeks == sum of supervisor records) |
 | **F** | Genealogy + stop-or-continue | Both | `todo` | Same drifting tool, opposite correct answers by flow state |
 | **G** | Business case + deck | Both | `todo` | 5-minute walkthrough runnable without touching a script |
