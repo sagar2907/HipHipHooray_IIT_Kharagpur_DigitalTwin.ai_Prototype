@@ -46,6 +46,7 @@
 | 2026-08-25 | **Complexity 6 solved and written up** — scaling across lines and plants | Priyansh | `done` |
 | 2026-08-25 | **Complexity 7 solved and written up** — validation over time, floor trust | Priyansh | `done` |
 | 2026-08-25 | **All 7 brief complexities answered on paper** — design phase closed | Priyansh | `done` |
+| 2026-08-25 | **Part C opened** — Solutioning Area 1 (modelling approach) answered | Priyansh | `done` |
 | _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
 | _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
@@ -66,7 +67,7 @@ _Last updated: 2026-08-25 by **Priyansh**_
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
 | **Sagar** | reviewed repo + Priyansh's audit; filed `suggestion_by_sagar/`; **B (the loop)** not yet started | — | — | — |
-| **Priyansh** | **All 7 complexities written up — Part A complete.** Next: Workstream **A (clear the ground)**, then the two transfer experiments that need no new code | `main` | — | — |
+| **Priyansh** | Part A complete (7/7 complexities). **Part C started** — Solutioning Area 1 done; areas 3/4/5 already covered by Part A. Next: area 2, then the ROI half of area 6 | `main` | — | — |
 
 **Sagar — two schema decisions waiting on you** in Part A of my suggestions file: a
 `manual_check` event type, and a fourth provenance value `attested`. Both touch `record.py`.
@@ -84,6 +85,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-25 | Priyansh | **Part C opened — Solutioning Areas.** Solution 1 (modelling approach) written up: four tiers not two; the five named quantities, incl. throughput as an *output* not an input and vibration as an honest gap with motor current as its free proxy; and the sensor-poor split — represent the doors, infer the room, refuse the rest. **Coverage note: areas 3/4/5 are already fully answered by Complexities 1/5/3**, so Part C cross-references rather than repeats. Open: area 2, and the ROI half of area 6. | — |
 | 2026-08-25 | Priyansh | **Complexity 7 worked through — all seven now written up.** Validation *over time* is the half we lack: labels arrive in three waves so precision must be reported per tier; the override is our fastest label source, not a courtesy; the ledger is how trust *recovers*, not just how it's measured; abstention must be displayed or correct silence reads as broken. Four of our six self-catches already are this clause. **Part A complete — 6.5 of 7 on paper. The gap between specified and built is now the whole remaining risk.** | — |
 | 2026-08-25 | Priyansh | **Complexity 6 worked through** — scaling. Reframed as "how long until it works" (a transfer curve, which *is* the commissioning estimate) rather than yes/no. Three-tier rollout economics. **Flags that two of the three transfer experiments need no new code and have never been run** — layout (L1-L4) and sensor maturity (`use_states=False`). Highest value-per-hour item we have. | — |
 | 2026-08-25 | Priyansh | **Complexity 5 worked through** — three stakeholder views. Key move: prove "one twin" with a *reconciliation test* rather than asserting it. Confidence thresholds differ per view because the cost of being wrong differs. The manager's view is a different statistic, not an average — averaging a constraint that moves 6x/shift destroys the information. Leadership must see the negative results. | — |

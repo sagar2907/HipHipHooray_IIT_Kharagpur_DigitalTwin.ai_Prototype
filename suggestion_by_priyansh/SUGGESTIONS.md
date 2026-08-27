@@ -911,6 +911,141 @@ remaining risk** — which is what the status board has said since day one.
 
 ---
 
+# Part C — Solutions to the Solutioning Areas
+
+One entry per Solutioning Area from the brief. Statement first, then the solution.
+
+**Coverage note:** three of the six are already answered in full inside Part A, so those
+entries cross-reference rather than repeat. The genuinely open ones are 1, 2 and the ROI
+half of 6.
+
+| # | Solutioning area | Where it's answered |
+|---|---|---|
+| 1 | Modelling approach | **below** |
+| 2 | Predictive techniques + validation | ⏳ pending — scattered across C2, C7, Locked decisions |
+| 3 | Handling data gaps + low-cost sensing | ✅ **Complexity 1** |
+| 4 | User experience | ✅ **Complexity 5** |
+| 5 | Integration approach | ✅ **Complexity 3** |
+| 6 | Scalability & ROI | ⚠️ scaling in **Complexity 6**; ROI half still thin |
+
+---
+
+## Solution 1 — Modelling approach
+
+> *"Modelling approach — what to represent explicitly (cycle time, torque, vibration,
+> temperature, throughput) versus infer indirectly, especially at sensor-poor stations."*
+
+**Status:** `open` — needs Sagar's review. Touches the shared schema and `plant.py` (mine).
+
+### C1.1 The rule, and four tiers not two
+
+**Model what propagates on the timescale of your decision and can actually be observed.
+Collapse everything else into a distribution.**
+
+The brief implies two buckets; there are four. The last two matter because "we don't model
+weld physics" sounds like an omission until you say "we model its outcome distribution
+instead", at which point it is a scoping decision.
+
+| Tier | Meaning | Example |
+|---|---|---|
+| **Represent explicitly** | It propagates through the system | Processing times, buffer levels |
+| **Infer indirectly** | Can't see it, can reason to it | Dark-station state, micro-stops, true clamp force |
+| **Collapse to a distribution** | Matters only through its outcome | Weld physics, robot kinematics |
+| **Skip** | Changes nothing we decide | 3D geometry, CAD visuals |
+
+### C1.2 The five quantities the brief names
+
+**Cycle time** — explicit, as a **distribution including the tail**, not a mean. 55s ± 2s
+behaves nothing like 55s with occasional 90s excursions, and the difference surfaces
+downstream as starvation. Critical move: decompose observed **dwell** into **processing**
+(work) and **waiting**. Dwell is what we measure; processing is what we need.
+
+**Torque** — explicit at fastening stations, nearly free because safety-critical joints are
+legally traceable. Subtlety: *measured* and *applied* value are conceptually distinct, and
+their divergence is the sensor-fault signature. In a plant we only ever hold the measured
+one, so what we actually represent is **the relationship between channels** — torque flat
+while current and angle move means the tool is degrading and the sensor is lying.
+
+**Vibration** — **an honest gap.** Accelerometers are a retrofit, not existing plant data, so
+vibration belongs in the costed sensor recommendation rather than the base model. **Motor
+current is its free proxy** — current signature analysis is established for motor-driven
+equipment, and the controller already reports it.
+
+**Temperature** — two different roles, and conflating them causes false alarms. Tool
+temperature is a *secondary degradation channel*; ambient is a *shared confounder* coupling
+every tool in a zone. Without ambient explicit, a warm afternoon looks like forty tools
+failing at once.
+
+**Throughput** — **not a primitive.** It is emergent from stations, buffers, variants and the
+calendar. Model it directly and we have built a regression on the outcome, confidently wrong
+the first time the line changes. Its correct role is the **comparison surface** — predicted
+vs observed over a trailing window *is* the twin-drift metric. Making it an output is what
+makes drift measurable at all.
+
+### C1.3 At sensor-poor stations: represent the doors, infer the room
+
+We can see the doorway, not the room. So the split is clean:
+
+**Represent — all measured, all at the edges, all free:**
+car in-time · car out-time · buffer level before · buffer level after · neighbour states ·
+variant · shift and time-since-break
+
+**Infer — by subtracting the waiting:**
+90 seconds inside is not 90 seconds of work. Ask the neighbours — buffer before empty means
+*starved*; buffer after full means *blocked*. Subtract both and what remains is real work.
+Measured size of this correction: **raw 88.8 s vs true 58.0 s**, a 53% overstatement. Trusting
+the raw number sends a technician to a station that isn't broken.
+
+From the corrected number we then infer: true processing time, whether it is drifting,
+whether it is the constraint, and its state at any moment.
+
+**Cannot know — and we say so:** whether the joint was tightened correctly, any process value,
+which specific defect occurred. No cleverness recovers these from door timings.
+
+For defects at these stations the fallback order is: **time it** (a trigger, not a diagnosis)
+→ **watch the next coupled instrumented station** (a free inspector) → **ask for a sensor**,
+with its cost and payback.
+
+### C1.4 What the seven complexities changed
+
+Three connections only visible after Part A:
+
+**Diagnostic need drives modelling decisions, not just throughput prediction.** From C2, the
+four root causes separate by *scope* — one station, one lot, one zone, one shift. So we must
+represent enough to **distinguish causes**, not merely to predict output. Ambient barely
+affects throughput; it is represented explicitly anyway, because without it we cannot tell
+environmental from equipment. A throughput-only analysis would never reach that argument.
+
+**What we represent bounds which couplings we can see.** From C1, a downstream station can act
+as a free inspector only if we represent the channel carrying the coupling — station 13's
+*angle*, not just its torque. Represent only primary spec channels and every coupling
+disappears.
+
+**What we represent must be fittable from the event stream, or it doesn't transfer.** From C6,
+any parameter needing data a new line doesn't emit breaks commissioning. That is a hard filter
+on the "represent explicitly" tier.
+
+### C1.5 Enforcement
+
+An explicitly represented value and an inferred value **must never look identical**. Every
+field carries value + provenance + calibrated confidence; a field missing any of the three is
+not published. Without that, a twin quietly launders estimates into facts.
+
+Scoping decisions are **proved by ablation, not asserted** — remove the element, re-run,
+report what changed. We have been wrong twice: the shift calendar looked cosmetic until it
+turned out to be the only thing that drains a backlog, and the material lot table looked like
+flavour until it produced 21 simultaneous alarms.
+
+### C1.6 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Solutioning 1 — modelling approach, represent vs infer | ✅ fully |
+| Solutioning 1 — *"especially at sensor-poor stations"* | ✅ the doors/room split |
+| Complexity 1 — inconsistent coverage | ✅ reinforces Part A |
+
+---
+
 # Part B — Numbered proposals
 
 ## 1 — Sequencing: build the demo first, not last
