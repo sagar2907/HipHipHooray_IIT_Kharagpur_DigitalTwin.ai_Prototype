@@ -922,7 +922,7 @@ half of 6.
 | # | Solutioning area | Where it's answered |
 |---|---|---|
 | 1 | Modelling approach | **below** |
-| 2 | Predictive techniques + validation | ⏳ pending — scattered across C2, C7, Locked decisions |
+| 2 | Predictive techniques + validation | ✅ **below** |
 | 3 | Handling data gaps + low-cost sensing | ✅ **Complexity 1** |
 | 4 | User experience | ✅ **Complexity 5** |
 | 5 | Integration approach | ✅ **Complexity 3** |
@@ -1100,6 +1100,140 @@ normalisation the detector never finds out.**
 | Solutioning 1 — *"especially at sensor-poor stations"* | ✅ the doors/room split |
 | Solutioning 1 — the bracketed list as examples, not a spec | ✅ declared / family / instance |
 | Complexity 1 — inconsistent coverage | ✅ reinforces Part A |
+
+---
+
+## Solution 2 — Predictive techniques, and validating them
+
+> *"Predictive techniques — anomaly detection, statistical process control, physics-informed
+> models, or ML-based bottleneck/defect prediction, and how you'd validate them before
+> trusting their output."*
+
+**Status:** `open` — needs Sagar's review. Mostly assembly of decisions already made; the
+**validation ladder** (C2.4) is new and unowned.
+
+### C2.1 Which technique does which job — and what each is NOT for
+
+The value is not in listing four families. It is in stating precisely where each does *not*
+belong, because using the wrong one is the common failure.
+
+| Technique | Its job | **Explicitly not for** |
+|---|---|---|
+| **SPC (CUSUM / EWMA)** | Defect precursors at instrumented stations | **Bottleneck detection** |
+| **Anomaly detection** | Micro-stops; cross-channel disagreement | Ranking constraints |
+| **Physics-informed** | **The bottleneck method** — DES twin + queueing theory | Replacing measurement where it exists |
+| **ML** | Failure-mode classifier; interaction discovery | Replacing arithmetic |
+
+**Why SPC and anomaly detection can never find a bottleneck:** *the bottleneck is not broken —
+it is just the slowest.* Nothing is abnormal about it; it runs exactly as it always has. A
+"something is wrong" detector looks straight past it every time. Anomalous and constraining
+are orthogonal properties.
+
+**Why CUSUM specifically:** averaging shrinks noise by √n, so a fixed window forces an
+unwinnable trade — short catches big shifts and misses small ones, long catches small ones too
+late. CUSUM accumulates and fires when there is enough evidence; you set a sensitivity, not a
+window. Two state variables per channel. Measured: **421–1,322 vehicles of warning**. One
+caveat before calibrating anything: **autocorrelation inflates the false-alarm rate silently**
+— consecutive fastenings share a joint, an operator, a lot.
+
+**Micro-stops** are anomaly detection's real home — measured **2,648 vs 876 logged down
+entries, zero overlap**, which is why they are invisible in the plant's own downtime report.
+
+### C2.2 Why physics-informed is the primary, not a preference
+
+To know which station is the bottleneck you must answer *"what would happen if this one were
+faster?"* — and the only honest way to answer is **to try it**. You cannot stare at a traffic
+jam and deduce which of five roadworks causes it; you would have to remove one. You cannot do
+that on a real line. **You can in a copy.**
+
+The 2023 systematic review makes this decision for us: the method matching the *definition* of
+a bottleneck is sensitivity-of-the-system, its only stated shortcoming is that it **requires
+counterfactuals**, and data science *"is not able to evaluate counterfactuals... some
+modelling needs to be reintroduced."* A calibrated DES twin under CRN is exactly that
+instrument — **our architecture, described in print as the field's open gap.**
+
+Alongside it: **Kingman** (queue time explodes as utilisation → 1 *and scales with
+variability*, so a station can become the constraint with no change in its mean at all),
+**Little's Law**, and **TOC** (our measured 106 vs 106).
+
+### C2.3 Where ML earns its keep — two places only
+
+The failure-mode classifier (4 classes, 3 features, fitted on **ratios** so it learns physics
+rather than our generator's units), and interaction discovery — gradient boosting surfacing
+which *combinations* of conditions co-occur with failure. In that second role it is a
+**hypothesis generator, never a conclusion**; anything it surfaces must be confirmed by a
+natural experiment or ruled physically plausible.
+
+The position: **don't train a computer to guess something you can just work out.** State
+reconstruction, constraint ranking and the buffer countdown are arithmetic; drift detection is
+1954 statistics. And we hold 1,248 labelled blocks — enough for gradient boosting, nowhere
+near enough for anything deep.
+
+### C2.4 Validation — ten rules, each one earned
+
+| | Rule | Because |
+|---|---|---|
+| 1 | Detector must not mark its own homework | We scored 95.2% — it was an identity, not a test |
+| 2 | Ground truth **economic**, not procedural | The constraint is whichever speed-up produces cars |
+| 3 | Calibrate on **held-out** data | "Zero false alarms" was really ~1 per 5 tool-weeks |
+| 4 | **Firewall** the headline | Different failure mechanism than development |
+| 5 | Beat **real** baselines, incl. persistence | "Same as ten minutes ago" is hard to beat and usually skipped |
+| 6 | Report **regret**, not accuracy | Picking a 4-of-5-car station loses one car, not everything |
+| 7 | Two regimes, **never averaged** | A balanced line genuinely has no answer |
+| 8 | **Reliability diagram** for any probability | This is what killed overtake risk |
+| 9 | Report **n and an interval** | The 5.9% rests on n=17 |
+| 10 | Negatives at **equal prominence** | Our strongest asset in a mentored round |
+
+Lead-time protocol: **T0** injected → **T1** twin alerts → **T2** conventional KPI would show
+it → **T3** EOL catches it. Lead time = T2 − T1, with T2 pinned to a stated convention
+(15-min KPI refresh) so the baseline is not self-graded.
+
+### C2.5 The validation ladder — and where we honestly sit
+
+"Validated" is not binary. **This table is new and worth building** — it states the discipline
+and the gaps in one object.
+
+| Level | Meaning |
+|---|---|
+| 0 | It runs |
+| 1 | Scored against independent truth |
+| 2 | Scored on held-out data |
+| 3 | Scored on a firewall set |
+| 4 | Beats real baselines |
+| 5 | Calibrated — reliability diagram |
+| 6 | Validated **over time** in production |
+
+| Capability | Level | Note |
+|---|---|---|
+| Effective-CT detection | **4** | Beats utilisation; not yet calibrated |
+| Multi-channel drift | **3–4** | Held-out calibration; firewall set exists, unused for the headline |
+| Buffer countdown | **4** | 60% of 178, limits stated |
+| **Overtake risk** | **5 — and failed there** | Reached calibration and was killed by it |
+| Dark localisation | **1** | Built; base rate defeats scoring |
+| Failure-mode classifier | **0–1** | Signatures separable; classifier not fitted |
+| Everything in Parts A and C | **0** | Designed, unbuilt |
+
+The overtake row is the most convincing line in the file: a capability that climbed to the
+highest rung of validation and was abandoned there.
+
+### C2.6 Decide the kill criterion *before* measuring
+
+Otherwise we will always find a way to say it worked. Like setting a target weight before
+stepping on the scales.
+
+We did this once by accident — we required the prediction to be honestly confident, measured
+it, and cut it. **That only counts as a result because the standard existed first.** So for
+each capability still to come we write the kill criterion now, e.g. *"if the rollout
+predictor's reliability diagram is off by more than 15 points after calibration, we report it
+failed and fall back to the cheap ranker."*
+
+### C2.7 What this closes
+
+| Brief clause | Covered |
+|---|---|
+| Solutioning 2 — the four technique families | ✅ mapped, with explicit non-uses |
+| Solutioning 2 — *"how you'd validate before trusting output"* | ✅ ten rules + the ladder |
+| Complexity 7 — validation over time | ✅ level 6 is where the ledger lives |
 
 ---
 

@@ -48,6 +48,7 @@
 | 2026-08-25 | **All 7 brief complexities answered on paper** — design phase closed | Priyansh | `done` |
 | 2026-08-25 | **Part C opened** — Solutioning Area 1 (modelling approach) answered | Priyansh | `done` |
 | 2026-08-25 | Solution 1 extended — per-station signal variation resolved (channel role registry) | Priyansh | `done` |
+| 2026-08-25 | **Solution 2 answered** — predictive techniques + the validation ladder | Priyansh | `done` |
 | _tbd_ | **A** — Clear the ground | Priyansh | `todo` |
 | _tbd_ | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
 | _tbd_ | **C** — Alert contract + trust ledger | Sagar | `todo` |
@@ -68,7 +69,7 @@ _Last updated: 2026-08-25 by **Priyansh**_
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
 | **Sagar** | reviewed repo + Priyansh's audit; filed `suggestion_by_sagar/`; **B (the loop)** not yet started | — | — | — |
-| **Priyansh** | Part A complete (7/7 complexities). **Part C started** — Solutioning Area 1 done; areas 3/4/5 already covered by Part A. Next: area 2, then the ROI half of area 6 | `main` | — | — |
+| **Priyansh** | Part A complete (7/7). **Part C: areas 1 and 2 done**; 3/4/5 already covered by Part A. **Only the ROI half of area 6 remains** — then the design phase is fully closed | `main` | — | — |
 
 **Sagar — two schema decisions waiting on you** in Part A of my suggestions file: a
 `manual_check` event type, and a fourth provenance value `attested`. Both touch `record.py`.
@@ -86,6 +87,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| 2026-08-25 | Priyansh | **Solution 2 written up** — predictive techniques + validation. Maps each technique to its job *and its explicit non-use*: SPC and anomaly detection can never find a bottleneck because **the bottleneck isn't broken, it's just slowest**. New artifact: a **validation ladder** (levels 0-6) with an honest placement of every capability we hold — including overtake risk at level 5, where it failed and was killed. Adds the rule that kill criteria are written *before* measuring. | — |
 | 2026-08-25 | Priyansh | **Solution 1 extended** — the brief's five bracketed quantities are examples, not a spec, and the signals that matter differ per station. Resolved as **declared -> learned per family -> measured per instance**: the primary channel is a fact from the process plan, secondaries are learned once per *equipment family* (5-6 per line, not 40), usefulness is a histogram per station. **New artifact: a channel role registry.** Also notes station *information value* — not all instrumented stations are equally informative. | — |
 | 2026-08-25 | Priyansh | **Part C opened — Solutioning Areas.** Solution 1 (modelling approach) written up: four tiers not two; the five named quantities, incl. throughput as an *output* not an input and vibration as an honest gap with motor current as its free proxy; and the sensor-poor split — represent the doors, infer the room, refuse the rest. **Coverage note: areas 3/4/5 are already fully answered by Complexities 1/5/3**, so Part C cross-references rather than repeats. Open: area 2, and the ROI half of area 6. | — |
 | 2026-08-25 | Priyansh | **Complexity 7 worked through — all seven now written up.** Validation *over time* is the half we lack: labels arrive in three waves so precision must be reported per tier; the override is our fastest label source, not a courtesy; the ledger is how trust *recovers*, not just how it's measured; abstention must be displayed or correct silence reads as broken. Four of our six self-catches already are this clause. **Part A complete — 6.5 of 7 on paper. The gap between specified and built is now the whole remaining risk.** | — |
