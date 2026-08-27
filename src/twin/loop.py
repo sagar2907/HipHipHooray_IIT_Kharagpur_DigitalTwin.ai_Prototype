@@ -9,11 +9,19 @@ Each tick rebuilds the detector against a TRUNCATED view of the run (see
 record.Recorder). That is what makes the causality structural rather than
 promised.
 
-The frame carries a `prescription` - the station to relieve and what it is
-worth in cars. That is the step from a twin that REPORTS to one that ADVISES:
-descriptive -> diagnostic -> predictive -> prescriptive. The value is computed
-by our own sensitivity machinery, not retrieved from a rules table, which is
-why we can defend it under questioning.
+The frame carries a `prescription` - the station to relieve, the action, and
+what leaving it alone is expected to cost. That is the step from a twin that
+REPORTS to one that ADVISES: descriptive -> diagnostic -> predictive ->
+prescriptive. The action name comes from a small library keyed on fault
+classes our own detector separates; the RANKING and the COST are computed,
+never retrieved, which is what makes the advice defensible.
+
+One precision worth keeping: the live cost figure is a throughput difference
+against the next-best station over the median observed episode - arithmetic on
+two measured quantities. It is NOT the paired-CRN cars-gained number from the
+sensitivity engine, which is stronger and is computed offline. Both are real;
+conflating them would be the sort of unearned number this project keeps
+deleting, so every cost the loop emits says which one it is.
 """
 
 from __future__ import annotations
@@ -43,12 +51,38 @@ ACTIONS = {
 
 @dataclass
 class Alert:
+    """The alert contract, Part 4.2 of the design.
+
+    An alert may be raised only if it carries ALL of:
+      1. the ranked candidate and its margin over the next candidate
+      2. the evidence that produced it - which signals moved, and by how much
+      3. a persistence estimate: will this last long enough to be worth
+         walking to
+      4. the recommended action
+      5. the expected cost of not acting
+
+    And the rule that gives the contract teeth: an alert that cannot state
+    its evidence is SUPPRESSED, not downgraded. A low-confidence alert with
+    no evidence is still noise, and noise is what erodes floor trust - so it
+    does not get to appear in a quieter font. It does not appear.
+    """
     at_s: float
     station: str
     kind: str                  # "constraint" | "forming"
     confidence: float
     detail: str
+    # --- the five contract fields ---
+    margin_s: float = 0.0                       # 1
+    evidence: list = field(default_factory=list)  # 2
+    persistence_min: float | None = None        # 3
+    action: str = ""                            # 4
+    cost_if_ignored: dict | None = None         # 5
     outcome: str = "pending"   # pending | confirmed | overridden
+
+    def complete(self) -> bool:
+        """All five present. Used to suppress, never to downgrade."""
+        return bool(self.evidence) and bool(self.action) \
+            and self.persistence_min is not None and self.cost_if_ignored is not None
 
 
 @dataclass
@@ -62,6 +96,9 @@ class LedgerState:
     alerts: list = field(default_factory=list)
     confirmed: int = 0
     overridden: int = 0
+    # Alerts blocked by the contract for want of evidence. Shown on screen:
+    # a system that never suppresses anything is not applying its own rule.
+    suppressed: int = 0
 
     @property
     def scored(self) -> int:
@@ -76,8 +113,43 @@ class TwinLoop:
     """One shift, replayed as a live decision loop."""
 
     def __init__(self, recorder: Recorder, step_s: int = 300,
-                 window_s: int = WINDOW_S, warmup_s: int | None = None):
+                 window_s: int = WINDOW_S, warmup_s: int | None = None,
+                 calibration: dict | None = None):
         self.rec = recorder
+        # Fitted on runs disjoint from this one - see scripts/fit_calibration.py.
+        # Without it `confidence` stays an ordering score and says so.
+        self.calibration = calibration
+
+        # WHAT GATES AN ALERT: COST, NOT TOP-1 PROBABILITY.
+        #
+        # Two failed attempts are worth recording, because the second one is
+        # the interesting one.
+        #
+        # (1) Uncalibrated, the detector claimed ~1.0 confidence, so a fixed
+        #     0.5 cut-off let everything through - about 170 alerts a shift.
+        # (2) Calibration replaced that with the honest number, a held-out
+        #     hit rate near 0.11, and the same 0.5 cut-off then suppressed
+        #     EVERY constraint alert. The system went silent precisely because
+        #     it became truthful. Raising the bar to "2x base rate" did not
+        #     help either: the calibrator's output is bounded by its top bin,
+        #     which is ~0.117, so that threshold is unreachable by
+        #     construction.
+        #
+        # The lesson is that top-1 probability is the wrong instrument. On a
+        # constraint that moves ~20x a shift the argmax label is close to a
+        # coin flip - we measured a 0.79-car noise floor, with the top-1 label
+        # surviving jitter in only ~50% of blocks - so a well-calibrated top-1
+        # confidence CANNOT be high, and demanding that it be high means never
+        # speaking.
+        #
+        # So we gate on what a supervisor actually decides with: the cost of
+        # leaving it alone. An alert fires when ignoring it is expected to cost
+        # at least MIN_COST_VEHICLES over the median observed episode. That is
+        # the same reasoning as our locked "regret, not top-1" decision, moved
+        # from the evaluation into the product. Confidence is still shown, with
+        # its lift over the base rate, as context rather than as a gate.
+        self.base_rate = (calibration or {}).get("base_rate_holdout") or 0.107
+        self.min_cost_vehicles = 0.5
         self.step_s = step_s
         self.window_s = window_s
         # Nothing sensible can be said before one full window has elapsed.
@@ -87,12 +159,25 @@ class TwinLoop:
         self._prev_constraint: str | None = None
         self._last_alert_station: str | None = None
         self._shifts = 0
+        # completed constraint episodes, in seconds -> the persistence estimate
+        self._episodes: list[float] = []
+        self._episode_start: float | None = None
 
     # ------------------------------------------------------------- one tick
     def tick(self, t_s: float) -> dict:
         t0 = time.perf_counter()
         view = self.rec.view_at(t_s)                  # <- the future is gone
         det = Detector(view, window_s=self.window_s)
+        if self.calibration:
+            edges = self.calibration["edges"]
+            probs = self.calibration["probs"]
+
+            def _cal(s, _e=edges, _p=probs):
+                i = 0
+                while i < len(_e) - 1 and s > _e[i]:
+                    i += 1
+                return _p[i]
+            det._calibrator = _cal
         verdict = det.verdict(int(t_s)) if t_s >= self.warmup_s else None
 
         frame = {
@@ -113,8 +198,13 @@ class TwinLoop:
             "ledger": {"precision": self.ledger.precision,
                        "confirmed": self.ledger.confirmed,
                        "scored": self.ledger.scored,
+                       "suppressed": self.ledger.suppressed,
+                       "raised": len(self.ledger.alerts),
                        "open": sum(1 for a in self.ledger.alerts
                                    if a.outcome == "pending")},
+            "persistence_min": self._persistence(),
+            "base_rate": round(self.base_rate, 3),
+            "min_cost_vehicles": self.min_cost_vehicles,
             "status": "warming up" if verdict is None else "live",
         }
 
@@ -122,6 +212,12 @@ class TwinLoop:
             if self._prev_constraint and verdict.constraint != self._prev_constraint:
                 self._shifts += 1
                 frame["shifts_so_far"] = self._shifts
+                # the previous episode just ended - record how long it held
+                if self._episode_start is not None:
+                    self._episodes.append(t_s - self._episode_start)
+                self._episode_start = t_s
+            elif self._episode_start is None:
+                self._episode_start = t_s
             self._prev_constraint = verdict.constraint
 
             frame.update(
@@ -196,6 +292,84 @@ class TwinLoop:
         }
 
     # -------------------------------------------------------------- ledger
+    # ------------------------------------------------- contract field 2
+    def _evidence(self, verdict) -> list:
+        """Which signals moved, and by how much. Contract field 2.
+
+        Stated against the station's OWN baseline and its OWN neighbours,
+        never against takt - a station drifting 54 -> 57 s is abnormal even
+        while comfortably inside a 60 s takt.
+        """
+        top = verdict.ranking[0]
+        second = verdict.ranking[1] if len(verdict.ranking) > 1 else None
+        ev = []
+        if second is not None:
+            ev.append({"signal": "effective cycle time",
+                       "value": f"{top.effective_ct:.1f}s",
+                       "vs": f"{second.effective_ct:.1f}s at {second.station}"})
+        if top.drift_cusum > 1:
+            ev.append({"signal": "CUSUM vs own baseline",
+                       "value": f"{top.drift_cusum:.1f}",
+                       "vs": "accumulating - processing time is drifting up"})
+        if top.availability < 0.98:
+            ev.append({"signal": "availability",
+                       "value": f"{top.availability:.3f}",
+                       "vs": "downtime is inflating effective cycle time"})
+        if top.blocked_share > 0.1:
+            ev.append({"signal": "blocked share",
+                       "value": f"{top.blocked_share:.2f}",
+                       "vs": "held up by the station downstream"})
+        if top.starved_share > 0.1:
+            ev.append({"signal": "starved share",
+                       "value": f"{top.starved_share:.2f}",
+                       "vs": "waiting on the station upstream"})
+        ev.append({"signal": "units in window", "value": str(top.units),
+                   "vs": f"provenance: {top.provenance}"})
+        return ev
+
+    # ------------------------------------------------- contract field 3
+    def _persistence(self) -> float | None:
+        """How long constraints have actually lasted on THIS line, so far.
+
+        Median of completed episodes this shift. Returns None until we have
+        seen at least two - guessing a persistence from one episode would be
+        exactly the kind of unearned number the contract exists to block, and
+        an incomplete alert is suppressed rather than shown.
+        """
+        if len(self._episodes) < 2:
+            return None
+        e = sorted(self._episodes)
+        mid = len(e) // 2
+        med = e[mid] if len(e) % 2 else (e[mid - 1] + e[mid]) / 2
+        return round(med / 60.0, 1)
+
+    # ------------------------------------------------- contract field 5
+    def _cost_if_ignored(self, verdict, persistence_min) -> dict | None:
+        """Expected cost of not acting, in vehicles.
+
+        Arithmetic on two measured quantities, stated as such: if the
+        constraint holds for `persistence_min` and runs at `ct_top` while the
+        next-best runs at `ct_second`, the throughput difference over that
+        window is the cost of leaving it alone. This is NOT the paired-CRN
+        cars-gained figure from the sensitivity engine - that is computed
+        offline and is a stronger number. Labelling which one you are looking
+        at is the whole point.
+        """
+        if persistence_min is None or len(verdict.ranking) < 2:
+            return None
+        top, second = verdict.ranking[0], verdict.ranking[1]
+        if top.effective_ct <= 0 or second.effective_ct <= 0:
+            return None
+        secs = persistence_min * 60.0
+        vehicles = secs * (1.0 / second.effective_ct - 1.0 / top.effective_ct)
+        if vehicles <= 0:
+            return None
+        return {"vehicles": round(vehicles, 2),
+                "over_min": persistence_min,
+                "basis": "throughput difference vs the next-best station over "
+                         "the median observed constraint episode",
+                "not": "paired-CRN sensitivity (offline, stronger)"}
+
     def _record_alerts(self, verdict) -> None:
         """Raise an alert on a CHANGE, never on every tick.
 
@@ -210,22 +384,45 @@ class TwinLoop:
         forming. Re-alerting on an unchanged condition is noise, and noise is
         precisely what erodes floor-level trust.
         """
-        if verdict.confidence >= 0.5 and verdict.constraint != self._last_alert_station:
-            self.ledger.alerts.append(Alert(
+        persistence = self._persistence()
+        evidence = self._evidence(verdict)
+        presc = self._prescribe(verdict)
+        cost = self._cost_if_ignored(verdict, persistence)
+
+        material = cost is not None and cost["vehicles"] >= self.min_cost_vehicles
+        if material and verdict.constraint != self._last_alert_station:
+            a = Alert(
                 at_s=verdict.at_s, station=verdict.constraint, kind="constraint",
                 confidence=verdict.confidence,
-                detail=f"constraint moved here · margin {verdict.margin:.1f}s"))
-            self._last_alert_station = verdict.constraint
+                detail=f"constraint moved here · margin {verdict.margin:.1f}s",
+                margin_s=round(verdict.margin, 1), evidence=evidence,
+                persistence_min=persistence, action=presc["action"],
+                cost_if_ignored=cost)
+            # Part 4.2: suppressed, not downgraded.
+            if a.complete():
+                self.ledger.alerts.append(a)
+                self._last_alert_station = verdict.constraint
+            else:
+                self.ledger.suppressed += 1
 
         for st, mins in verdict.forming[:1]:
-            # one open forming alert per station at a time
-            if any(a.kind == "forming" and a.station == st and a.outcome == "pending"
-                   for a in self.ledger.alerts):
+            if any(x.kind == "forming" and x.station == st and x.outcome == "pending"
+                   for x in self.ledger.alerts):
                 continue
-            self.ledger.alerts.append(Alert(
+            a = Alert(
                 at_s=verdict.at_s, station=st, kind="forming",
                 confidence=verdict.confidence,
-                detail=f"forming in ~{mins} min"))
+                detail=f"forming in ~{mins} min",
+                margin_s=round(verdict.margin, 1),
+                evidence=[{"signal": "buffer slope", "value": f"~{mins} min",
+                           "vs": "projection under current flow, not a forecast"}],
+                persistence_min=persistence,
+                action="watch this station's coupled neighbours",
+                cost_if_ignored=cost)
+            if a.complete():
+                self.ledger.alerts.append(a)
+            else:
+                self.ledger.suppressed += 1
 
     def resolve(self, index: int, outcome: str) -> None:
         """A human confirms or overrides. The twin never decides this itself -

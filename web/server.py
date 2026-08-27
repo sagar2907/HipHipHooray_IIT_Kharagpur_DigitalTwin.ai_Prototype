@@ -105,13 +105,23 @@ def rollup():
 
 @app.get("/alerts")
 def alerts():
+    """Every alert with all five contract fields (design Part 4.2)."""
     loop: TwinLoop = STATE["loop"]
-    return JSONResponse([{
-        "i": i, "clock": f"{(int(a.at_s) + 6 * 3600) // 3600 % 24:02d}:"
-                         f"{(int(a.at_s) % 3600) // 60:02d}",
-        "station": a.station, "kind": a.kind,
-        "confidence": a.confidence, "detail": a.detail, "outcome": a.outcome,
-    } for i, a in enumerate(loop.ledger.alerts)])
+    return JSONResponse({
+        "suppressed": loop.ledger.suppressed,
+        "calibrated": bool(loop.calibration),
+        "calibration": {k: loop.calibration.get(k) for k in
+                        ("ece_before", "ece_after", "gate_within_10pts",
+                         "n_fit", "n_holdout")} if loop.calibration else None,
+        "alerts": [{
+            "i": i, "clock": f"{(int(a.at_s) + 6 * 3600) // 3600 % 24:02d}:"
+                             f"{(int(a.at_s) % 3600) // 60:02d}",
+            "station": a.station, "kind": a.kind, "confidence": a.confidence,
+            "detail": a.detail, "outcome": a.outcome,
+            "margin_s": a.margin_s, "evidence": a.evidence,
+            "persistence_min": a.persistence_min, "action": a.action,
+            "cost_if_ignored": a.cost_if_ignored,
+        } for i, a in enumerate(loop.ledger.alerts)]})
 
 
 def main():
@@ -131,8 +141,17 @@ def main():
                  f"Point --run at a dataset run, e.g. dataset/v5/flow/runs/L1_run_001")
 
     rec = Recorder.from_dir(a.run, 0)
+    cal = None
+    cp = os.path.join(HERE, "..", "results", "calibration.json")
+    if os.path.exists(cp):
+        with open(cp, encoding="utf-8") as fh:
+            cal = json.load(fh)
+        print(f"  calib : ECE {cal['ece_before']:.3f} -> {cal['ece_after']:.3f} "
+              f"(fitted on {len(cal['fit_runs'])} runs, this run excluded)")
+    else:
+        print("  calib : none — confidence will be labelled an ordering score")
     STATE.update(run_dir=a.run, speed=a.speed, step_s=a.step,
-                 loop=TwinLoop(rec, step_s=a.step))
+                 loop=TwinLoop(rec, step_s=a.step, calibration=cal))
 
     import uvicorn
     print(f"  run   : {a.run}")

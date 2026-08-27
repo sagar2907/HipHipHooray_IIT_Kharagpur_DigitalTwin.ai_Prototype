@@ -79,6 +79,11 @@ tr.top td:first-child{box-shadow:inset 3px 0 var(--alarm)}
 .alert button:hover{background:#dfe3e6}
 .alert .done{font:600 10px Consolas,monospace;color:var(--ok)}
 .alert .done.over{color:var(--alarm)}
+.alertc{border-left:2px solid var(--line);padding-left:6px;margin-bottom:6px}
+.contract{font-size:10.5px;color:var(--muted);padding:3px 0 4px 2px}
+.contract div{padding:1px 0}
+.contract b{color:#3d4348;font-weight:700}
+.contract code{background:var(--panel2);padding:0 3px;font-size:10px}
 footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
 
 /* tabs */
@@ -179,9 +184,16 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
 
     <div class="card">
       <h2>Alert ledger — does the floor trust it?</h2>
-      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
         <span class="big" id="prec">—</span>
         <span class="muted" id="precsub">no calls scored yet</span>
+      </div>
+      <div class="muted" id="calnote" style="font-size:11px;margin-bottom:6px">
+        confidence is an ordering score — no calibration loaded
+      </div>
+      <div class="muted" style="font-size:11px;margin-bottom:6px">
+        <b id="supp">0</b> alerts <b>suppressed</b> for want of evidence —
+        the contract suppresses rather than downgrades
       </div>
       <div id="alerts" class="muted">no alerts yet</div>
     </div>
@@ -275,16 +287,39 @@ function drawLine(constraint, forming){
 }
 
 function renderAlerts(){
-  fetch('/alerts').then(r=>r.json()).then(list=>{
+  fetch('/alerts').then(r=>r.json()).then(d=>{
+    const list = d.alerts||[];
+    const cal = d.calibration;
+    if(cal){
+      $('calnote').innerHTML =
+        `confidence is <b>calibrated</b> — ECE ${cal.ece_before} → <b>${cal.ece_after}</b>
+         on ${cal.n_holdout} held-out samples,
+         <span class="${cal.gate_within_10pts?'pass':'fail'}">
+         ${cal.gate_within_10pts?'within ±10 pts':'OUTSIDE ±10 pts'}</span>`;
+    }
+    $('supp').textContent = d.suppressed;
     if(!list.length){ $('alerts').innerHTML='<span class="muted">no alerts yet</span>'; return; }
-    $('alerts').innerHTML = list.slice(-6).reverse().map(a=>{
+    $('alerts').innerHTML = list.slice(-4).reverse().map(a=>{
       const ctl = a.outcome==='pending'
         ? `<button onclick="resolve(${a.i},'confirmed')">confirm</button>
            <button onclick="resolve(${a.i},'overridden')">override</button>`
         : `<span class="done ${a.outcome==='overridden'?'over':''}">${a.outcome}</span>`;
-      return `<div class="alert"><span class="st-id">${a.station}</span>
-        <span class="muted">${a.clock}</span>
-        <span style="flex:1">${a.detail}</span>${ctl}</div>`;
+      const cost = a.cost_if_ignored;
+      return `<div class="alertc">
+        <div class="alert"><span class="st-id">${a.station}</span>
+          <span class="muted">${a.clock}</span>
+          <span style="flex:1">${a.detail}</span>${ctl}</div>
+        <div class="contract">
+          <div><b>1 · candidate</b> ${a.station}, margin ${a.margin_s}s</div>
+          <div><b>2 · evidence</b> ${
+            (a.evidence||[]).map(e=>`${e.signal} <code>${e.value}</code>`).join(' · ')}</div>
+          <div><b>3 · persistence</b> ~${a.persistence_min} min (median episode so far)</div>
+          <div><b>4 · action</b> ${a.action}</div>
+          <div><b>5 · cost if ignored</b> ${cost
+            ? `<b>${cost.vehicles}</b> vehicles over ${cost.over_min} min
+               <span class="muted">— ${cost.basis}</span>`
+            : '<span class="muted">not estimable</span>'}</div>
+        </div></div>`;
     }).join('');
   });
 }
@@ -411,8 +446,10 @@ es.onmessage = ev => {
 
   $('k-con').textContent = f.constraint;
   $('k-margin').textContent = f.margin + ' s';
+  const lift = (f.base_rate && f.confidence) ? (f.confidence/f.base_rate) : null;
   $('k-conf').innerHTML = f.confidence +
-      ` <span class="tag">${f.confidence_is_calibrated?'calibrated':'ordering score'}</span>`;
+      ` <span class="tag">${f.confidence_is_calibrated?'calibrated':'ordering score'}</span>` +
+      (lift ? ` <span class="tag act">${lift.toFixed(1)}× base rate</span>` : '');
   $('k-cross').innerHTML = f.cross_check_agrees
       ? '<span class="tag">agrees</span>'
       : '<span class="tag warn">disagrees</span>';
