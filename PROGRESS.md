@@ -21,32 +21,31 @@
 
 ## Timeline
 
-**Round 2 deadline: 2026-08-30.** As of **08-28 01:09 IST**: the 27 Aug build
-window elapsed unused, so this is now **2 days + the submission morning, and
-nothing is built.** Design is 100% done; the build is 0%.
+**Round 2 deadline: 2026-08-31** (moved). As of **08-28 01:18 IST**: the 27 Aug build
+window elapsed unused. Remaining: 28, 29, 30 and the 31st up to the evening
+recording. **Design is 100% done; the build is 0%.**
 
-> **TRIAGE — this supersedes the phase ordering below.** There is not time for
-> A–G. Judged deliverable is a *working prototype*, so:
+> **REVISED 08-28 for the 31 Aug deadline.** The extra day plus round-the-clock
+> working restores what the 3-day triage had cut:
 >
 > | | Workstream | Call |
 > |---|---|---|
-> | **B** | The loop | **BUILD — everything else is negotiable, this is not** |
-> | **E** | Views | **ONE view, not three.** Supervisor only |
-> | **G** | Deck + business case | **BUILD — no submission without it** |
-> | **A** | Clear the ground | mostly done 08-27 (12/12 tests, noise floor). Land the 2 doc errors only |
-> | **D** | 40 stations | **CUT the new build.** Run the 2 transfer tests only — they need no new code and can run unattended |
-> | **C** | Alert ledger | **CUT to a stub** — log alerts, show running precision. No calibration campaign |
-> | **F** | Genealogy | **CUT** — per the status board's own rule, F goes first |
+> | **B** | The loop | **BUILD FIRST, tonight.** Nothing else starts until it runs |
+> | **E** | Views | **RESTORED to all three** — the PS names them in Complexity 5 *and* Solutioning Area 4 |
+> | **C** | Alert ledger | **RESTORED to a real ledger** — Complexity 7 is a named clause |
+> | **D** | Scaling | **RESTORED** — 2 transfer runs (one flag, never run) + L5 dark-ratio fix + truth build, all in the background |
+> | **F** | Genealogy | **RESTORED, scheduled last (30th)** — Complexity 4 is named; drops cleanly if the 29th slips |
+> | **G** | Proposal + deck | **BUILD — 2 of the 3 graded deliverables are documents** |
+> | **A** | Clear the ground | done 08-27 (12/12 tests, noise floor). Only the 2 doc errors remain |
 >
-> **Compute is not the constraint, human hours are.** The transfer runs and any
-> truth rebuild should be launched in the background immediately and left to run
-> while we build; do not sit and watch them.
+> **Compute is not the constraint, human hours are.** Transfer runs and the L5
+> truth build go to the background at 09:00 on the 28th and are not watched.
 
 ```
-  design ──▶ B ──▶ E-lite ──▶ G ──▶ SUBMIT
-   CLOSED    ▲                      30 Aug
-             we are here, 27 Aug. Design is 100% done and the build is 0%.
-             3 days. C is a stub, D is 2 background runs, F is cut.
+  design ──▶ B ──▶ E(x3) ──▶ C ──▶ F ──▶ G ──▶ FREEZE ──▶ RECORD ──▶ SUBMIT
+   CLOSED    ▲     29 Aug    29     30     30     31 noon    31 eve    31 night
+             28 Aug 01:18 — we are here. Design 100%, build 0%.
+             The loop runs before sunrise or the plan changes at 09:00.
 ```
 
 | Date | Milestone | Who | State |
@@ -75,25 +74,68 @@ nothing is built.** Design is 100% done; the build is 0%.
 | 2026-08-27 | **Verification pass — 9/9 defects worked through, suite 12/12 green.** Confidence miscalibration and the CRN failure-desync both found and fixed | Sagar | `done` |
 | 2026-08-27 | Live code moved into this repo; deadline set to 30 Aug; board triaged; **B de-risked — engine is causal and 800x faster than the gate needs** | Sagar | `done` |
 | **08-28 01:09** | **Recommendation layer folded into beat 4; case retrieval deferred to Round 3.** Slice window of 27 Aug elapsed unbuilt — **2 days + submission morning left** | Sagar | `done` |
-| 08-27→28 | **B** — The loop *(essential — never cut)* | Sagar | `todo` |
-| 08-28 | **D-lite** — 2 transfer tests, run unattended in background | Priyansh | `todo` |
-| 08-28→29 | **E-lite** — ONE view (supervisor), fed by the loop | Both | `todo` |
-| 08-29 | **C-stub** — alert log + running precision line | Sagar | `todo` |
-| 08-29→30 | **G** — deck + business case rebuilt around the prototype | Both | `todo` |
-| 08-30 | **Submission** — proposal, prototype, pitch | Both | `todo` |
-| — | ~~**F** — Genealogy + stop-or-continue~~ | — | `cut` |
-| — | ~~**D** — new 40-station build~~ (L5 draft stays a draft) | — | `cut` |
+| **08-28 night** | **B** — the loop: `record.py`, `loop.py`, SSE, ugly page | Sagar | `todo` |
+| **08-28** | **D** — transfer runs launched in background; L5 dark-ratio fix; truth build | Priyansh | `todo` |
+| **08-28** | **Business Proposal** drafting starts — it is 1 of the 3 graded deliverables | Priyansh | `todo` |
+| **08-29** | **E** — all THREE views (PS names them twice; no longer cut to one) | Sagar | `todo` |
+| **08-29** | **C** — alert ledger + calibrated confidence on screen | Sagar | `todo` |
+| **08-30** | **F** — genealogy containment *(restored — Complexity 4 is named)* | Sagar | `todo` |
+| **08-30** | **G** — deck; proposal complete | Priyansh | `todo` |
+| **08-31 day** | Freeze, rehearse, **record the prototype in the evening** | Both | `todo` |
+| **08-31 night** | **SUBMIT** — proposal + prototype + pitch | Both | `todo` |
 
-Move the `▲` marker as workstreams complete. Fill the `_tbd_` dates once the deadline is set.
+Move the `▲` marker as workstreams complete.
 
 ---
 
-## THE PLAN — 3 days, built backwards from the demo
+## THE FINAL PLAN — 28→31 Aug, mapped to the problem statement
 
-**Principle: the demo is the spec.** We have 13 design documents and a
-verified engine. We do not need more capability — we need one honest,
-running thing plus the story we already wrote. So we fix the 5 minutes a
-judge sees, then build only what those 5 minutes require.
+**Deadline moved to 31 Aug. Prototype recorded on the evening of the 31st.**
+That is ~3.5 days at high intensity, which restores F, D and the full
+three-view E that the 3-day triage had cut.
+
+### The PS asks for THREE graded deliverables — not one
+
+This is the single most important correction to the earlier plan, which
+over-indexed on the prototype:
+
+| Deliverable | PS wording | Owner | State |
+|---|---|---|---|
+| **1. Detailed Business Proposal** | problem framing, solution design, target users, business case **and impact**, **phased roadmap**, key risks **with mitigations** | Priyansh | 13 design docs exist — must be assembled into ONE document |
+| **2. Working Prototype** | "functional demonstration of your solution's **core mechanism**", illustrative data explicitly fine | Sagar | 0% built; engine verified ready |
+| **3. Pitch Presentation** | presents **both** proposal and prototype | Both | not started |
+
+Two of the three are documents. Priyansh's 3.5 days are the proposal and
+deck; Sagar's are the prototype. That split is the plan.
+
+### PS coverage matrix — every complexity must land somewhere
+
+| # | Complexity | Where it is answered | Gap? |
+|---|---|---|---|
+| 1 | Inconsistent sensor coverage, manual checklists | L5 segments + `manual_check` events + observability map, live in the UI | **fix dark ratio** (below) |
+| 2 | Multi-causal, intermittent root causes | Part A C2 in proposal; demo shows fault kinds distinguished | code not built — **proposal + narration** |
+| 3 | PLC risk, maintenance windows | read-only boundary **enforced by a test**; window-dated sensor schedule | proposal + a UI label |
+| 4 | Early defect surfaces late; downstream units carry it | **F: genealogy containment list** from VIN thread | restored — build minimal |
+| 5 | Three stakeholder views | **E: supervisor / manager / leadership** | restored to all three |
+| 6 | Scaling: layout, vintage, sensor maturity | **D: L1–L4 transfer + `use_states=False`** — one flag, never run | run in background |
+| 7 | Validation over time; false alarms erode trust | **C: alert ledger** + the calibration fix (ECE 0.454→0.074) | build ledger |
+
+Solutioning areas 1–6 map onto the same work: modelling (Tier A–D),
+predictive techniques + **the validation ladder**, data gaps + low-cost
+sensing menu, the three views, integration/read-only, and ROI.
+
+### Reference parameters — one real mismatch to fix
+
+- *"30–50 stations across body, paint, final"* → **L5 is 40. ✅**
+- *"a majority well-instrumented, a meaningful minority manual"* →
+  **L5 is currently 48.5% dark (19.4/40). ✗** That is not a minority. Fix
+  `seg_dark_p` to roughly `{body 0.05, paint 0.60, final 0.45}` → ~30% dark.
+  Keeps the segment story and the inversion *inside* final assembly, while
+  matching the PS at line level. **One line in `layouts.py`, then rebuild.**
+- *"pause only in scheduled maintenance windows"* → the window-dated sensor
+  schedule already answers this.
+
+### Principle: the demo is the spec
 
 ### The 5 minutes (write this first, build to it)
 
@@ -109,31 +151,75 @@ judge sees, then build only what those 5 minutes require.
 
 Anything not serving beats 1–7 is cut. That is the whole scope rule.
 
-### Day plan
+### Day plan — 28 → 31 Aug
 
-| When | Sagar | Priyansh |
+| When | Sagar (prototype) | Priyansh (proposal + deck) |
 |---|---|---|
-| ~~27 Aug, tonight~~ | ~~The vertical slice~~ **— MISSED. Nothing built. Absorbed into 28 Aug below.** | ~~transfer runs + deck skeleton~~ **— also not started** |
-| **28 Aug, morning** | **The vertical slice, now urgent.** `record.py` + `loop.py` + FastAPI/SSE + one ugly page. Gate: **a shift replays at 60x in a browser.** This slipped once; it cannot slip twice | **First action of the day:** launch the 2 transfer runs in the background and walk away. Then the deck skeleton — beats 1–7 as slide titles |
-| **28 Aug, rest of day** | Beats 2–4: ranking panel, evidence panel + **recommended action**, forming warnings | Doc errors #2/#3 into deck + Evidence File; fault-class→action table (~2 h) for beat 4 |
-| **29 Aug** | Beat 5 (ledger stub) + beat 6 (confirm button). **ISA-101 pass**: grayscale, colour only on deviation | Business case (beat 7) from our own outputs. Deck to full draft |
-| **30 Aug** | **Freeze by midday.** Screen-record the 5 minutes as insurance against a live failure | Deck final. Submit with time to spare |
+| **28 Aug 01:00–09:00** | **THE SLICE.** `record.py` + `loop.py` + FastAPI/SSE + one ugly page. Gate: **a shift replays at 60x in a browser from a loop that never sees `t > now`.** Nothing else until this runs | Sleep — you take the 31st night shift |
+| **28 Aug 09:00–13:00** | Ranking panel + evidence panel (why this station) | **First:** fix `seg_dark_p`, rebuild L5, launch `build_truth.py` in background (~2–3 h) and the 2 transfer runs. Then start the **Business Proposal** |
+| **28 Aug 13:00–21:00** | Forming warnings (buffer countdown) + **prescriptive line** (action + cars) | Proposal §problem framing, §solution design, §target users |
+| **28 Aug 21:00–01:00** | Buffer + catch-up. **Gate check: beats 1–4 running** | Proposal §business case, feed in transfer numbers |
+| **29 Aug** | **E: all three views** — supervisor (ISA-101 grayscale, real-time), manager (weekly trend, *a different statistic, not an average*), leadership (ROI). Then **C: alert ledger** + calibrated confidence on screen | Proposal §phased roadmap, §risks with mitigations. Deck skeleton |
+| **30 Aug** | **F: genealogy containment** — VIN thread → "these 47 vehicles carry the suspect joint". Then **the reconciliation test** (leadership total == sum of manager weeks == sum of supervisor records) | Deck to full draft, built on the beats. Proposal COMPLETE by end of day |
+| **31 Aug morning** | **FREEZE 12:00.** No new features after noon. Bug-fix and rehearse only | Deck final; rehearse the pitch |
+| **31 Aug evening** | **RECORD THE PROTOTYPE.** Multiple takes | Record the pitch |
+| **31 Aug night** | **SUBMIT** all three deliverables with hours to spare | Both |
 
-### Rules that protect the deadline
+### Rules that protect this deadline
 
-1. **Integrate on day 1, not day 3.** The slice runs end-to-end tonight or the plan changes tomorrow, not on the 29th.
-2. **Record the demo on the 30th regardless.** A recording cannot crash in front of a judge.
-3. **No new science.** Every number in the demo already exists in `results/`. If a beat needs a number we do not have, cut the beat.
-4. **Ugly and working beats pretty and partial.** Styling is the 29th, and only after beats 1–6 run.
-5. **If we slip a day, cut in this order:** beat 5, then beat 3, then beat 7. **Never beats 1, 2, 4** — they are the twin, the finding, and the honesty.
+1. **The slice runs before sunrise or the plan changes at 09:00.** It has already slipped one night; it cannot slip two.
+2. **Freeze at noon on the 31st.** Every team that misses a deadline does so by shipping a feature at hour 23 that breaks the demo.
+3. **Record early and often.** A recording cannot crash in front of a judge. Take a rough recording on the 30th as insurance, then a good one on the 31st.
+4. **No new science.** Every number shown already exists in `results/`. If a beat needs a number we do not have, cut the beat, not the honesty.
+5. **Cut order if we slip:** the LLM phrasing, then F (genealogy), then the manager view. **Never** the loop, the shifting-constraint finding, the evidence panel, or the proposal.
+6. **The proposal is graded equally with the prototype.** If on the 30th the proposal is behind, Sagar stops building and writes.
+
+### Two genuine forks — decide these on the 28th, not the 30th
+
+**FORK 1 — which line does the demo run on?**
+
+| | Option A: demo on **L5** (40 stations) | Option B: demo on **L1** (20 stations) |
+|---|---|---|
+| PS fit | **Matches "30–50 stations, body/paint/final" exactly** | 20 stations — visibly under the stated range |
+| Validation | Truth labels need a 2–3 h build; numbers would be new and unaudited | **Every published number already applies** — 958 blocks, Wilson intervals, McNemar |
+| Risk | New data, one day old, could surprise us live | Story is "we validated on 20 and it looks small" |
+| Segments/manual checks | **Body/paint/final visible; manual_check real** | Not present at all |
+
+**Recommendation: A, with B's numbers.** Run the demo on L5 so it looks like
+the PS, and cite L1/v5 for every accuracy claim, stating plainly that
+validation was done on the 126-run L1 corpus and L5 is the scaled layout.
+Launch `build_truth.py` on L5 on the morning of the 28th so the option stays
+open — it costs one background job, not a decision.
+
+**FORK 2 — genealogy (Complexity 4): build or narrate?**
+
+| | Option A: build a minimal containment view | Option B: proposal only |
+|---|---|---|
+| Cost | ~4 h on the 30th; VIN thread already exists in `unit_scan`/`rework_log` | zero |
+| Value | Complexity 4 is **explicitly named** in the PS, and "47 vehicles carry this joint" is a *visceral* demo beat | a paragraph a judge may not read |
+| Risk | Competes with the three views if the 29th runs late | leaves a named complexity undemonstrated |
+
+**Recommendation: A, but scheduled last (30th).** If the 29th slips, it drops
+without touching anything else. That is exactly what a cut item should look
+like.
+
+*(Third, smaller: the LLM phrasing layer is IN if the 30th is calm, OUT
+otherwise — already logged, already bounded, already cheap to drop.)*
 
 ### Why this fits
 
 B's engine is **done and verified** (causal 13/13, 6 ms/verdict, ~800x the
 headroom the 60x gate needs). The forming mechanism, the evidence, the
 detector and every headline number already exist and are measured. The
-remaining work is a replay driver, a ticker, and one page — plus a deck
-assembled from 13 documents that are already written.
+remaining work is a replay driver, a ticker, and one page — plus a proposal
+and deck assembled from 13 documents that are already written.
+
+**One honest note on working 24 h a day for four days:** the highest-risk
+hours of this whole plan are the evening of the 31st, when we record — and
+that is the point at which four days of no sleep will have accumulated. The
+freeze at noon and the insurance recording on the 30th exist specifically so
+that a tired evening cannot cost us the submission. Protect those two rules
+above any feature.
 
 ---
 
