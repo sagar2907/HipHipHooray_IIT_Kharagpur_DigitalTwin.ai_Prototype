@@ -176,6 +176,11 @@ def resolve(index: int, outcome: str):
                             status_code=400)
     loop: TwinLoop = STATE["loop"]
     loop.resolve(index, outcome)
+    # persist it: the override is our fastest label source, and a decision
+    # that only lives in memory cannot rebuild the trust ledger later
+    if 0 <= index < len(loop.ledger.alerts):
+        a = loop.ledger.alerts[index]
+        STATE["store"].update_outcome(index, outcome, a.station, a.at_s)
     return JSONResponse({"ok": True, "precision": loop.ledger.precision,
                          "scored": loop.ledger.scored})
 

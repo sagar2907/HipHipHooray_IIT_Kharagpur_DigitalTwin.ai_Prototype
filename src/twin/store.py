@@ -133,6 +133,25 @@ CREATE TABLE IF NOT EXISTS shifts (
   ended_iso     TEXT
 );
 
+-- Complexity 1 evidence. Manual checklist entries are the ONLY signal at a
+-- station with no instrumentation, and `attested` provenance plus the entry
+-- latency are the whole point: a human record does not exist for the twin
+-- until someone types it in. Not storing these threw away the dark-station
+-- half of the data we claim to handle.
+CREATE TABLE IF NOT EXISTS manual_checks (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  session_id    INTEGER,
+  at_s          INTEGER,
+  shift_no      INTEGER,
+  run           TEXT,
+  station       TEXT,
+  result        TEXT,
+  reason        TEXT,
+  latency_min   REAL,
+  provenance    TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_manual_session ON manual_checks(session_id);
+
 CREATE TABLE IF NOT EXISTS tool_assessments (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   session_id    INTEGER,
@@ -234,6 +253,16 @@ class Store:
                 "INSERT INTO forming (frame_id, station, minutes, dark)"
                 " VALUES (?,?,?,?)", fm)
 
+        mc = [(self.session_id, f.get("t_s"), f.get("shift_no"), f.get("run"),
+               m.get("station"), m.get("result"), m.get("reason"),
+               m.get("latency_min"), m.get("provenance"))
+              for m in (f.get("manual_checks") or [])]
+        if mc:
+            self.db.executemany(
+                "INSERT INTO manual_checks (session_id, at_s, shift_no, run,"
+                " station, result, reason, latency_min, provenance)"
+                " VALUES (?,?,?,?,?,?,?,?,?)", mc)
+
         self.db.commit()
         self.n_frames += 1
 
@@ -258,15 +287,24 @@ class Store:
             self.db.commit()
         self._alerts_written = len(ledger.alerts)
 
-    def update_outcome(self, index: int, outcome: str, station: str) -> None:
-        """Reflect a human confirm/override back into the store."""
+    def update_outcome(self, ledger_index: int, outcome: str,
+                       station: str, at_s: float) -> None:
+        """Persist a human confirm/override.
+
+        This was defined and never called, so every decision a supervisor made
+        updated the in-memory ledger and was lost on restart - while the design
+        calls the override our FASTEST LABEL SOURCE. Losing it meant the trust
+        ledger could never be rebuilt from the record.
+
+        Matched on (station, at_s) rather than the ledger's list index, because
+        the index is a property of one process's memory and means nothing to
+        the database.
+        """
         if not self.enabled:
             return
         self.db.execute(
-            "UPDATE alerts SET outcome=? WHERE id=("
-            " SELECT id FROM alerts WHERE session_id=? AND station=?"
-            " ORDER BY id LIMIT 1 OFFSET ?)",
-            (outcome, self.session_id, station, 0))
+            "UPDATE alerts SET outcome=? WHERE session_id=? AND station=?"
+            " AND at_s=?", (outcome, self.session_id, station, at_s))
         self.db.commit()
 
     # -------------------------------------------------------------- shifts
