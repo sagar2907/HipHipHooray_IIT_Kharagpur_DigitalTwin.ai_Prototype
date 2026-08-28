@@ -1,0 +1,7 @@
+label,n,top1,top1_lo,top1_hi,top2,regret,ceiling,capture,experiment
+"L1  20 stn, 1 merge  (reference)",191,44.5,37.6,51.6,55.5,1.208,4.272,71.7,layout
+"L2  30 stn, 2 merges",94,10.6,5.9,18.5,17.0,1.218,1.705,28.5,layout
+L3  20 stn + PARALLEL pair,94,13.8,8.3,22.2,25.5,1.431,1.87,23.5,layout
+"L4  15 stn, 1 merge",96,21.9,14.8,31.1,33.3,1.221,2.096,41.7,layout
+L1  scans only (use_states=False),191,18.8,13.9,25.0,25.7,2.891,4.272,32.3,sensor_maturity
+L2  scans only (use_states=False),94,12.8,7.5,21.0,16.0,1.239,1.705,27.3,sensor_maturity
