@@ -80,12 +80,64 @@ recording. **Design is 100% done; the build is 0%.**
 | **08-28** | **Business Proposal** drafting starts — it is 1 of the 3 graded deliverables | Priyansh | `todo` |
 | **08-28 04:20** | **E — three views DONE**, reconciliation test PASSES | Sagar | `done` |
 | **08-28 05:10** | **C — alert contract DONE.** ECE 0.479→0.025, gate PASS; 25 alerts/shift | Sagar | `done` |
-| **08-28 06:00** | **F — genealogy DONE.** 6/6 tools correct, onset +2 min, stop/continue flips | Sagar | `done` |
+| **08-28 06:00** | **F — genealogy DONE.** onset +2 min; stop/continue flips. *(6/6 was one run — at scale it is 70.5% actionable, see 13:40)* | Sagar | `done` |
+| **08-28 13:40** | **Data collection COMPLETE — plant stopped.** 903 shifts, 647k station-rows, 92 MB. Two claims corrected downward | Sagar | `done` |
 | **08-30** | **G** — deck; proposal complete | Priyansh | `todo` |
 | **08-31 day** | Freeze, rehearse, **record the prototype in the evening** | Both | `todo` |
 | **08-31 night** | **SUBMIT** — proposal + prototype + pitch | Both | `todo` |
 
 Move the `▲` marker as workstreams complete.
+
+---
+
+## MEASURED PROTOTYPE NUMBERS — quote these, not the demo run
+
+**Source: `results/twin.db` (92 MB, 903 shifts). Regenerate with
+`python scripts/query_twin.py`.** All rates are Wilson 95%, computed on the
+**120 independent runs** — repeats excluded, because the loop is
+deterministic and a replay reproduces a run byte-identically.
+
+### ⚠ Two figures were corrected DOWNWARD once we left the demo run
+
+| Claim | Demo run said | **Truth at scale** | Use |
+|---|---|---|---|
+| Alert rate | 25 / shift | **48.6 / shift (range 20–102)** | still inside the ISA-18.2 budget of 150 — quote **48.6**, with the range |
+| Tool diagnosis | "6/6 correct" | **70.5% actionable [67.9, 72.9]**, n=1,246 tools | say *"actionable diagnosis on ~70% of alarmed tools"* — **never "6/6"** |
+
+`L1_run_001` is a flattering run. A perfect score invites the general case,
+and the general case is 70.5% — which is still a good number, and survives
+questioning in a way a perfect score does not.
+
+Final tool verdicts: wear 30.0% · unclear 29.5% · mechanical_change 29.4% ·
+sensor 11.1%.
+
+### Figures that held up at scale
+
+| Claim | Value | 95% CI | n |
+|---|---|---|---|
+| Forming warnings naming a **station with NO sensors** | **15.5%** | [15.0, 15.9] | 29,060 warnings |
+| Stop-or-continue — WAIT | 55.6% | [54.6, 56.5] | 10,560 |
+| Stop-or-continue — STOP NOW (free) | 41.2% | [40.2, 42.1] | 10,560 |
+| Stop-or-continue — STOP SOON | 3.2% | [2.9, 3.6] | 10,560 |
+| Constraint occupancy — S20 | 8.0% | [7.7, 8.4] | 21,548 ticks |
+| Confidence calibration | ECE **0.479 → 0.025** | gate ±10 pts | 600 held-out |
+| Reconciliation (one twin, three views) | **PASS** | exact | 6,730 min / 4,431 veh |
+| Loop latency | mean 71 ms | — | 86,742 ticks |
+
+### Why collection stopped at 903 shifts
+
+The loop is deterministic — verified: `L1_run_005` yields the identical
+180-step constraint sequence on every cycle. We completed **7.5 full cycles
+of all 120 runs**, so ~87% of the database is exact repeats carrying zero
+information. **Sufficiency was reached at cycle 1 (~120 shifts).** More
+running widens the file, not the sample.
+
+### Known gap
+
+`manual_checks` = **0 rows**. L1 runs carry no `manual_check.csv`; only the
+**L5 segmented dataset** does. The table and the write path are built and
+tested, but this dataset cannot exercise them — see the L1-vs-L5 fork in
+`PLAN.md` §7, still open and now more consequential.
 
 ---
 
@@ -226,11 +278,11 @@ above any feature.
 
 ## Right now
 
-_Last updated: 2026-08-28 07:40 by **Sagar**_
+_Last updated: 2026-08-28 13:40 by **Sagar**_
 
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
-| **Sagar** | **B, C, E, F DONE + continuous replay with persistence** (`results/live/`, summarised by `scripts/summarize_live.py`). Leave the server running to accumulate evidence. Originally: — loop, alert contract, three views, genealogy. **Every workstream I own is complete, ~2 days early** (F was scheduled for the 30th). Remaining for me: polish + the ROI beat. | `main` | — | — |
+| **Sagar** | **B, C, E, F DONE. Data collection COMPLETE and the plant is STOPPED** — 903 shifts in `results/twin.db`. **Read "MEASURED PROTOTYPE NUMBERS" above before writing any slide**: alert rate is 48.6/shift not 25, and tool diagnosis is 70.5% actionable not 6/6. Restart the demo with `python web/server.py --run <run> --speed 60 --shifts 0`. Originally: — loop, alert contract, three views, genealogy. **Every workstream I own is complete, ~2 days early** (F was scheduled for the 30th). Remaining for me: polish + the ROI beat. | `main` | — | — |
 | **Priyansh** | **Design closed — 7/7 complexities, 6/6 solutioning areas.** Starting **Workstream A (clear the ground)**, then the two transfer experiments that need no new code | `main` | — | — |
 
 ### PRIYANSH — START HERE (written 08-28 02:20)
@@ -252,7 +304,9 @@ _Last updated: 2026-08-28 07:40 by **Sagar**_
 6. Schema decisions from your Part A are **both accepted** (`manual_check`,
    `attested`) and built against.
 
-**Claim discipline for the deck:** McNemar says we **significantly beat
+**Claim discipline for the deck — UPDATED 08-28 13:40:** use the **MEASURED PROTOTYPE NUMBERS**
+section above. Two figures were corrected downward after 903 shifts: **alert rate 48.6/shift
+(not 25)** and **tool diagnosis 70.5% actionable (not 6/6)**. Also: McNemar says we **significantly beat
 utilisation (p=0.0025)** and are **statistically tied with active-period
 (p=0.45)**. Claim the first. Never the second. The "46 vs 43" framing is
 retired entirely.
@@ -273,6 +327,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| **08-28 13:40** | Sagar | **DATA COLLECTION COMPLETE — plant stopped. 903 shifts recorded, and two headline numbers CORRECTED downward.** Final store: **86,742 frames · 647,855 station-rows · 108,208 forming rows · 73,581 tool assessments · 10,766 alerts · 903 shifts · 2 sessions · 92 MB.** **Why we stopped:** the loop is deterministic, so replaying a run reproduces it **byte-identically** — verified, `L1_run_005` gives the same 180-step constraint sequence every cycle. We completed **7.5 full cycles of all 120 runs**, so ~87% of the database is exact repeats carrying **zero** information. Sufficiency was reached at cycle 1 (~120 shifts); everything after that was burning CPU, not gathering evidence. **Two corrections that must reach the deck — the demo run was flattering:** (1) **Alert rate is 48.6/shift (range 20–102), NOT the 25 measured on `L1_run_001`.** Still inside the ISA-18.2 budget of 150, so the claim survives, but quote 48.6 with its range. (2) **Tool classification is 70.5% actionable [67.9, 72.9] across 1,246 alarmed tools — not 6/6.** Final verdicts: wear 30.0%, unclear 29.5%, mechanical_change 29.4%, sensor 11.1%. The 6/6 was one favourable run; claiming it invites the general case, and the general case is 70.5%. **Numbers that held up at scale (Wilson 95%, deduplicated to 120 independent runs):** forming warnings naming a **dark station 15.5% [15.0, 15.9]** (n=29,060); stop-or-continue **55.6% WAIT / 41.2% STOP NOW / 3.2% STOP SOON** (n=10,560); constraint occupancy S20 8.0%, S19 7.0% (n=21,548). **Known gap:** `manual_checks` is 0 rows — L1 runs carry no `manual_check.csv`; only the **L5 segmented dataset** does. The plumbing is built and tested but this dataset cannot exercise it, which is the open L1-vs-L5 fork in `PLAN.md` §7. | `15ed7dc` |
 | **08-28 07:40** | Sagar | **All live data now gathered into SQLite, and the plant runs independently of viewers.** **Structural fix first:** the loop lived inside `/stream`, so **the line only ran while a browser was attached** — close the tab and the plant stopped and nothing was gathered. A driver task now owns the loop from server start to shutdown; viewers subscribe to a broadcast, and joining/leaving changes nothing about what is recorded. **`src/twin/store.py`** writes **7 tables** — `sessions, frames, rankings, forming, alerts, shifts, tool_assessments` — to `results/twin.db` in **WAL mode**, so analysis reads never block the plant. One row per *(frame, station)* in `rankings` is what makes after-the-fact evidence queries possible; **every row carries a session id** so numbers can never be silently mixed across runs, speeds or calibrations. JSONL kept alongside as a crash-proof raw stream. **`scripts/query_twin.py`** opens it **read-only** and prints the standard report — safe against a live plant. **Early numbers:** 782 station-rows behind 110 ticks; alerts avg cost 0.94 (constraint) / 1.56 (forming) vehicles; **30 of 118 forming warnings — 25.4% — name a station with NO sensors**; stop-or-continue already splitting 32 WAIT / 13 STOP NOW / 2 STOP SOON on the same faults. **The plant is left running and must not be stopped without Sagar's instruction.** | `89bd435` |
 | **08-28 07:00** | Sagar | **Continuous multi-shift replay + persistence — the twin was amnesiac.** `--shifts 0` replays consecutive runs as consecutive shifts (120 available, cycling); **the ledger, confirmed/overridden counts and calibration carry across shifts** while shift-local state resets. That is what Complexity 7 actually needs — one shift cannot demonstrate a precision that has "survived over time". Then found nothing was being *kept*: frames streamed to the browser and were dropped, the ledger lived in memory, a restart erased it all. `src/twin/sink.py` now appends three JSONL streams to `results/live/` (compact frame per tick, every alert with its 5 contract fields, a row per shift); `scripts/summarize_live.py` reads them back into a committable `results/live_summary.json` while the raw stream is gitignored. `/recording` reports capture status without interrupting the run. **Two bugs found by running continuously:** (a) every `/stream` connection drove the *same* loop, so a page refresh double-advanced the shift counter and raced the ledger — streams now carry a generation number and the newest viewer takes ownership; (b) buffer countdowns name stations with **no sensors at all** and the UI didn't say so — now flagged `DARK · inferred`. **First 17 simulated hours give quotable numbers: 19.5 alerts/shift (ISA-18.2 budget is 150), and 42 of 211 forming warnings — ~20% — name a station with zero instrumentation.** | `5aa4470`, `676657e` |
 | **08-28 06:00** | Sagar | **WORKSTREAM F DONE — genealogy containment + stop-or-continue. Gate met.** `src/twin/genealogy.py`. **Onset is read backwards off the CUSUM accumulator** — only possible because defect #5's stateful-CUSUM fix landed in the verification pass. **Scored against hidden tool truth on `L1_run_001`: all 6 tools classified correctly, onset within +2 min on S05, zero false alarms on the 3 healthy tools.** **The headline beat:** S05 and S06 get **opposite instructions from the same symptom** — S05 is real wear (*SERVICE it*), S06 is a lying transducer whose 26 NOKs are **false rejections of good parts** (*RECALIBRATE only — do NOT service*; servicing scraps good parts and fixes nothing). Separated by asking whether a mechanically-coupled channel moved with the torque (S05: current −4.09σ, angle +6.01σ; S06: current +0.45σ, angle −0.17σ). Containment partitioned by location — 202 vehicles through S05 since onset, 48 still on the line vs 154 completed — because a car on the line is a rework instruction and one that has left is a customer event. **Stop-or-continue follows Priyansh's C4 correction — the escape route decides, not bottleneck status:** the *same* S05 tool is told **STOP NOW** at buffer 0/3 and **WAIT FOR THE BREAK** at 3/3, which is the gate *"same drifting tool, opposite correct answers"* demonstrated live. **Bug caught by scoring rather than reading:** the CUSUM was one-sided and detected **nothing at all**, because tool wear drives torque *down*. Now two-sided and running on torque *and* motor current, so an early mechanical change (S08) is visible before the joint result moves. | `18c117c` |
