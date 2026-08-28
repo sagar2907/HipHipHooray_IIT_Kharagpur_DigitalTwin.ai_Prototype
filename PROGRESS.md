@@ -221,6 +221,41 @@ sensing menu, the three views, integration/read-only, and ROI.
 
 Anything not serving beats 1–7 is cut. That is the whole scope rule.
 
+### CLOSING THE REMAINING 4 COMPLEXITIES — dated schedule (08-28 16:20)
+
+The PS says *"you are not expected to address every point listed"*, so the
+target is **honest coverage with the gaps named**, not a forced 7/7. What
+follows is what each remaining complexity actually costs.
+
+| # | Complexity | When | Cost | Target state | How |
+|---|---|---|---|---|---|
+| **6** | Scaling: layout / vintage / sensor maturity | **28 Aug, tonight** | ~30 min setup, then unattended | ✅ **demonstrated** | Run L1–L4 layout transfer + `use_states=False`. **No new code** — the flag exists and has never been run. Launch it, write the proposal while it runs |
+| **2** | Multi-causal, intermittent root causes | **29 Aug** (inside the proposal) | ~1 h | 📄 **credibly addressed, not demonstrated** | Full version (zone_id, co-occurrence engine) is a multi-day build and **will not happen**. What ships: the fault-kind separation we already demonstrate, plus an explicit statement that **operator variation is excluded on ethical grounds** — the PS names it, so saying so is a *strength*, and silently skipping it is not |
+| **3** | PLC risk / maintenance windows | **30 Aug** | ~3 h | ✅ **demonstrated** | Turn the argument into an **output**: dark stations → detection horizon → cost of the blind window → *"these sensors at the next shutdown, ranked by exposure closed per rupee, and here is the cost of deferring the rest"*. `coupling_map.csv` already exists in L5 |
+| **1** | Manual checklists (the missing half) | **29–30 Aug** | ~3 h + 2–3 h unattended | ✅ **demonstrated** *(if L5 is chosen)* | Needs the L1-vs-L5 decision. If L5: fix `seg_dark_p` → rebuild → run the loop on it. Verified ready: **1,458 entries, 96.8% pass rate computable**. Also fixes the 30–50-station reference parameter in the same move |
+
+**Projected final coverage: 6 of 7 demonstrated, 1 (Complexity 2) addressed
+in the proposal with its exclusion stated.** That is a defensible submission,
+and the one gap is a deliberate ethical choice rather than an oversight.
+
+### The hard constraint
+
+Two of three graded deliverables **do not exist**. Complexity work is
+scheduled *around* them, never instead of them:
+
+| Day | Documents (priority) | Complexity work (fills gaps) |
+|---|---|---|
+| **28 Aug eve** | Proposal skeleton + framing | **C6** launched, runs unattended |
+| **29 Aug** | **Proposal body — the main effort** | **C2** written in; **C1** L5 rebuild launched overnight |
+| **30 Aug** | Deck drafted; proposal complete | **C3** built; **C1** captured |
+| **31 Aug** | **Freeze at noon.** Rehearse, record, submit | none — no new work after noon |
+
+**If a day slips, complexity work is cut before document work.** A missing
+complexity costs part of one criterion; a missing proposal costs a third of
+the submission.
+
+---
+
 ### ⚠ SOLO REPLAN — 08-28 16:00
 
 **Priyansh is out (academic work). Sagar owns all three deliverables.** The
@@ -313,7 +348,7 @@ above any feature.
 
 ## Right now
 
-_Last updated: 2026-08-28 16:00 by **Sagar**_
+_Last updated: 2026-08-28 16:20 by **Sagar**_
 
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
@@ -362,6 +397,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| **08-28 16:20** | Sagar | **Dated schedule for the 4 remaining complexities.** C6 (scaling) **tonight** — no new code, launch L1–L4 transfer + `use_states=False` and write while it runs; C2 (multi-causal) **29 Aug in the proposal** — the full zone/co-occurrence build is multi-day and **will not happen**, so what ships is the fault-kind separation we already demonstrate plus an explicit statement that **operator variation is excluded on ethical grounds** (the PS names it, so saying so is a strength); C3 (maintenance windows) **30 Aug** — turn the argument into a **dated sensor schedule ranked by exposure closed per rupee**, `coupling_map.csv` already exists; C1 (manual checklists) **29–30 Aug** — needs the L1-vs-L5 call, and choosing L5 also fixes the 30–50-station reference parameter in the same move. **Projected final coverage: 6/7 demonstrated, C2 addressed on paper with its exclusion stated.** Recorded the hard constraint: complexity work is scheduled *around* the two unstarted documents, never instead of them, and **if a day slips, complexity work is cut before document work** — a missing complexity costs part of one criterion, a missing proposal costs a third of the submission. | — |
 | **08-28 16:00** | Sagar | **PROJECT IS NOW SOLO — Priyansh is on academic work; Sagar owns all three deliverables.** The two-person split (he writes, I build) is void and the day plan is superseded. **Rewrote the PS coverage matrix to live status** — it had been written *before* B/C/E/F existed, so it described intentions rather than reality, and carried a stale ECE figure. **Honest score: 3 of 7 complexities fully demonstrated (4, 5, 7), 2 partial (1, 3), 1 paper-only (2), 1 untouched (6).** New solo priority order: **(1) Business Proposal** — 1 of 3 graded deliverables, not started, and assembly rather than authorship given 13 design docs + `results/twin.db`; **(2) Complexity 6 transfer tests** — an entire named complexity with zero demonstration needing **no new code**, the best coverage-per-hour left; (3) deck; (4) Complexity 1 manual checklists (needs the L5 call); (5) Complexity 3 window-dated schedule; (6) state the operator-variation exclusion out loud — the PS names it, we exclude it deliberately, and saying so is a strength. **Explicit stop rule recorded: no more prototype features.** It is done and over-built relative to the ask, and every further hour there is an hour not spent on two deliverables that do not exist. | — |
 | **08-28 15:10** | Sagar | **COMPONENT-BY-COMPONENT BUG SWEEP — 4 bugs found and fixed, 2 of which would have shown a judge wrong information.** Probed each component with edge cases rather than reading it; `record.py`, `rollup.py` and the loop's shift-reset logic came back clean. **(1) `update_outcome` matched on `(session, station, at_s)` — but `at_s` is a *within-shift* clock and repeats. On the recorded data that key matched up to 45 rows across 45 different shifts, so one supervisor pressing *confirm* would have silently marked 44 decisions nobody made** — corrupting exactly the ledger we use to argue trustworthiness. `Alert` now carries `shift_no` and the key includes it. **(2) Only NOK manual checks reached storage, capped at 3** (the display list was being persisted). A checklist's **pass rate** is the whole diagnostic — Part A §1.3 turns on comparing it to EOL failures — so storing only failures made that test impossible. Frames now carry a separate full set windowed on the *tick* (not the 30-min display window, which would have written each entry 6×). **Verified on L5: 1,458 entries, 1,411 OK / 47 NOK, pass rate 96.8% now computable.** **(3) `POST /alert/<bad index>` returned `{"ok":true}` having done nothing** — a client would believe a decision was recorded when it was dropped; silently losing a decision is the worst failure available to a trust ledger. Now 404, plus 409 on an already-resolved alert. **(4) The UI fetched the dark-station set ONCE at page load, but every run has its own** — run_001 is S10/S14/S15, run_003 shares *none* of them. After the first shift change the line drew the **previous** run's sensor coverage — **wrong for 119 of 120 runs**, and wrong about precisely the claim that panel exists to make. Meta is re-fetched on every shift change. Also clamps `/genealogy?at_s` to `[0, horizon]`. Tests 10 passed / 2 skipped. | `d3c6418` |
 | **08-28 13:40** | Sagar | **DATA COLLECTION COMPLETE — plant stopped. 903 shifts recorded, and two headline numbers CORRECTED downward.** Final store: **86,742 frames · 647,855 station-rows · 108,208 forming rows · 73,581 tool assessments · 10,766 alerts · 903 shifts · 2 sessions · 92 MB.** **Why we stopped:** the loop is deterministic, so replaying a run reproduces it **byte-identically** — verified, `L1_run_005` gives the same 180-step constraint sequence every cycle. We completed **7.5 full cycles of all 120 runs**, so ~87% of the database is exact repeats carrying **zero** information. Sufficiency was reached at cycle 1 (~120 shifts); everything after that was burning CPU, not gathering evidence. **Two corrections that must reach the deck — the demo run was flattering:** (1) **Alert rate is 48.6/shift (range 20–102), NOT the 25 measured on `L1_run_001`.** Still inside the ISA-18.2 budget of 150, so the claim survives, but quote 48.6 with its range. (2) **Tool classification is 70.5% actionable [67.9, 72.9] across 1,246 alarmed tools — not 6/6.** Final verdicts: wear 30.0%, unclear 29.5%, mechanical_change 29.4%, sensor 11.1%. The 6/6 was one favourable run; claiming it invites the general case, and the general case is 70.5%. **Numbers that held up at scale (Wilson 95%, deduplicated to 120 independent runs):** forming warnings naming a **dark station 15.5% [15.0, 15.9]** (n=29,060); stop-or-continue **55.6% WAIT / 41.2% STOP NOW / 3.2% STOP SOON** (n=10,560); constraint occupancy S20 8.0%, S19 7.0% (n=21,548). **Known gap:** `manual_checks` is 0 rows — L1 runs carry no `manual_check.csv`; only the **L5 segmented dataset** does. The plumbing is built and tested but this dataset cannot exercise it, which is the open L1-vs-L5 fork in `PLAN.md` §7. | `15ed7dc` |
