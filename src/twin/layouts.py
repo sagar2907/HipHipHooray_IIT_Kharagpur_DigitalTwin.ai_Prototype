@@ -84,5 +84,12 @@ LAYOUTS["L5"] = Layout(
         # not a threshold
         "final": ((50.0, 65.0), (0.25, 0.55)),
     },
-    seg_dark_p={"body": 0.10, "paint": 0.90, "final": 0.65},
+    # Tuned to the PS reference parameter: "a MAJORITY of stations
+    # well-instrumented, a MEANINGFUL MINORITY reliant on manual checks".
+    # The first cut (0.10/0.90/0.65) gave 48.5% dark line-wide, which is not a
+    # minority and would have read as contradicting the brief. These give
+    # ~30% dark while KEEPING the inversion inside final assembly, which is
+    # the actual argument in Part A 1.1 - coverage holds across the line and
+    # fails exactly where the manual work is.
+    seg_dark_p={"body": 0.05, "paint": 0.60, "final": 0.45},
 )

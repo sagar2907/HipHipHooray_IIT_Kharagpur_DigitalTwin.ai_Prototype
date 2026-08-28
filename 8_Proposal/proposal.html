@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>DigitalTwin.ai — Business Proposal</title>
+<style>
+@page { size: A4; margin: 16mm 15mm 14mm 15mm; }
+body{font:10.5pt/1.45 "Segoe UI",Arial,sans-serif;color:#1b1e21;margin:0}
+h1{font-size:21pt;margin:0 0 2px;letter-spacing:-.4px}
+h2{font-size:13pt;margin:20px 0 6px;padding-bottom:3px;border-bottom:1.5px solid #1c5d99;color:#1c5d99}
+h3{font-size:11pt;margin:13px 0 4px;color:#24303a}
+p{margin:0 0 7px}
+.sub{color:#5a6067;font-size:9.5pt;margin-bottom:2px}
+.rule{height:3px;background:#1c5d99;margin:8px 0 14px}
+table{width:100%;border-collapse:collapse;font-size:9pt;margin:7px 0 10px}
+th{background:#eef2f5;text-align:left;padding:4px 6px;border:1px solid #c9d2d9;font-size:8.5pt;
+   text-transform:uppercase;letter-spacing:.04em;color:#3d4d5a}
+td{padding:4px 6px;border:1px solid #d8dee3;vertical-align:top}
+td.n{text-align:right;font-family:Consolas,monospace;white-space:nowrap}
+.kpi{display:flex;gap:8px;margin:10px 0 12px}
+.kpi div{flex:1;border:1px solid #c9d2d9;border-left:3px solid #1c5d99;padding:6px 8px;background:#f7f9fb}
+.kpi .v{font:700 15pt Consolas,monospace;color:#1c5d99}
+.kpi .l{font-size:8pt;color:#5a6067;line-height:1.3}
+.box{border:1px solid #c9d2d9;background:#f7f9fb;padding:8px 10px;margin:9px 0;font-size:9.5pt}
+.warn{border-left:3px solid #b3261e;background:#fdf6f5}
+.good{border-left:3px solid #2d6a4f;background:#f4faf6}
+code{font-family:Consolas,monospace;font-size:8.5pt;background:#eef2f5;padding:0 3px}
+ul,ol{margin:0 0 8px;padding-left:17px} li{margin-bottom:3px}
+.src{color:#6b7280;font-size:8pt;font-style:italic}
+h2{page-break-after:avoid} table{page-break-inside:avoid}
+.box{page-break-inside:avoid} .foot{page-break-inside:avoid}
+.foot{margin-top:14px;padding-top:6px;border-top:1px solid #d8dee3;color:#6b7280;font-size:8pt}
+</style></head><body>
+
+<h1>DigitalTwin.ai</h1>
+<div class="sub">Detailed Business Proposal &nbsp;·&nbsp; Accenture Innovation Challenge 2026, Problem Track 4
+&nbsp;·&nbsp; Team HipHipHooray &nbsp;·&nbsp; Sagar Sahu, Priyansh Goyal &nbsp;·&nbsp; IIT Kharagpur</div>
+<div class="rule"></div>
+
+<div class="box good">
+<b>The one-line claim.</b> A vehicle assembly line already emits enough data to say
+<i>which station is costing you cars right now</i>, <i>which one is about to</i>, and
+<i>what to do about it</i> — on a line where nearly a fifth of the stations have no sensors at all.
+We built that loop, ran it for <b>903 shifts</b>, and every number in this document
+is measured against held-out ground truth with its source named.
+</div>
+
+<div class="kpi">
+  <div><div class="v">15.5%</div><div class="l">of forming-bottleneck warnings name a station with <b>no sensors at all</b><br>[15.0–15.9], n=29,060</div></div>
+  <div><div class="v">0.025</div><div class="l">calibration error (ECE) after fitting, from 0.479<br>600 held-out samples</div></div>
+  <div><div class="v">70.5%</div><div class="l">of alarmed tools get an <b>actionable</b> diagnosis<br>[67.9–72.9], n=1,246</div></div>
+  <div><div class="v">903</div><div class="l">shifts replayed through the live loop<br>86,742 decisions recorded</div></div>
+</div>
+
+<h2>1 · Problem framing</h2>
+
+<p>A plant manager can already tell you last month's OEE. What no system reliably tells them is
+the question that actually decides output: <b>at 14:20 today, which single station is holding the
+line back, and is it worth walking to?</b></p>
+
+<p>Three things make that hard, and they are the three the brief names:</p>
+
+<ul>
+<li><b>The constraint moves.</b> In our data it changes station roughly <b>20 times per shift</b>.
+A weekly report averages that away, and an average describes no moment of the shift it covers.</li>
+<li><b>Utilisation lies.</b> A station that is blocked by its neighbour and a station that is
+genuinely slow both read ~95% busy. Ranking by busyness sends people to the victim.</li>
+<li><b>The data is uneven.</b> Real lines mix legacy and modern equipment. Some stations are
+richly instrumented; others emit nothing at all and rely on a human with a clipboard.</li>
+</ul>
+
+<p>The gap is not sensing and it is not dashboards. It is the step from <i>describing</i> the line
+to <i>deciding</i> on it — and doing so honestly enough that a supervisor keeps trusting the system
+after the third false alarm.</p>
+
+<h2>2 · Solution design</h2>
+
+<h3>2.1 A twin, not a shadow</h3>
+<p>The distinction that matters (Kritzinger's taxonomy): a <i>model</i> is offline, a <i>shadow</i>
+receives data one-way, a <i>twin</i> closes the loop. Our prototype ingests, detects, ranks,
+prescribes and re-reads on a timer, and the causality is <b>enforced structurally</b>: the detector
+is handed a view of the run truncated at <code>now</code>, so it cannot read the future even by
+accident. Verified identical verdicts at 13/13 timepoints against the full-history run.</p>
+
+<h3>2.2 Four tiers of knowledge, never mixed</h3>
+<table>
+<tr><th>Tier</th><th>What it is</th><th>Where it comes from</th></tr>
+<tr><td>A — measured</td><td>The station reports it</td><td>PLC state, scans, tool telemetry</td></tr>
+<tr><td>B — inferred</td><td>Bracketed between neighbours</td><td>Boundary timestamps, buffer slope</td></tr>
+<tr><td>C — attested</td><td>A person says so</td><td>Manual checklist entry, with its entry latency</td></tr>
+<tr><td>D — predicted</td><td>Projected under current flow</td><td>Buffer countdown</td></tr>
+</table>
+<p>Every value on screen carries its tier. An operator must never see an inferred number and a
+measured one in the same font.</p>
+
+<h3>2.3 How the constraint is found</h3>
+<p>Rank by <b>effective cycle time</b> — work time divided by availability — not by busyness.
+Work time excludes seconds the station spent blocked or starved, so a victim is not charged for
+its neighbour's fault. Each station is compared to <b>its own early baseline</b>, never to takt:
+a station drifting 54→57 s is abnormal even while comfortably inside a 60 s takt.</p>
+
+<h3>2.4 From detection to prescription</h3>
+<p>The twin names the action and what ignoring it costs. The action vocabulary is a small library
+keyed on fault classes the detector itself separates; the <b>ranking and the cost are computed</b>,
+never retrieved. That is the step from descriptive → diagnostic → predictive → <b>prescriptive</b>.</p>
+
+<div class="box"><b>The alert contract.</b> An alert may be raised only if it carries all five of:
+the ranked candidate and its margin; the evidence that produced it; a persistence estimate; the
+recommended action; and the expected cost of not acting. <b>An alert that cannot state its evidence
+is suppressed, not downgraded</b> — a quiet alert with no evidence is still noise, and noise is what
+erodes floor trust. In the recorded run, 7 alerts were suppressed by this rule.</div>
+
+<h2>3 · Target users</h2>
+
+<p>Three users, three resolutions, <b>one model</b> — and we prove they are one rather than
+asserting it.</p>
+
+<table>
+<tr><th>User</th><th>Needs</th><th>What we built</th></tr>
+<tr><td><b>Floor supervisor</b></td><td>Real time, in the moment</td>
+<td>ISA-101 display: grey base, colour only on deviation. A well-designed plant HMI is visually
+quiet during normal operation. Dark stations are drawn hatched, not hidden.</td></tr>
+<tr><td><b>Plant manager</b></td><td>Weekly planning</td>
+<td>A <b>constraint-occupancy distribution</b>, deliberately <i>not</i> an average — the constraint
+moves ~20×/shift, so a mean describes no moment of it. "S20 held the line 21.3% of week 1" is a
+scheduling and capex input; a mean is not.</td></tr>
+<tr><td><b>Leadership</b></td><td>Investment case</td>
+<td>Value, coverage and the evidence table — every figure naming the file that produced it.
+Colour is allowed here: ISA-101 governs a plant HMI, not a business dashboard.</td></tr>
+</table>
+
+<div class="box good"><b>The reconciliation test.</b> Each level totals independently and is compared:
+<b>6,730 constraint-minutes and 4,431 vehicles, identical across supervisor records, manager weeks
+and leadership.</b> That is how we show three views are one twin instead of three dashboards.</div>
+
+<h2>4 · Business case and impact</h2>
+
+<h3>4.1 Detection quality, measured against economic ground truth</h3>
+<p>Ground truth is not "which station looked busiest". It is the station whose speed-up
+<b>actually produces more cars</b>, measured by re-running the line under common random numbers.
+That makes the benchmark economic rather than definitional.</p>
+
+<table>
+<tr><th>Method</th><th class="n">Top-1</th><th class="n">Top-2</th><th class="n">Regret (cars/block)</th></tr>
+<tr><td><b>Effective cycle time (ours)</b></td><td class="n">43.1%</td><td class="n">59.4%</td><td class="n"><b>1.309</b></td></tr>
+<tr><td>Active period (Roser 2001)</td><td class="n">46.0%</td><td class="n">57.9%</td><td class="n">1.348</td></tr>
+<tr><td>Utilisation (the common baseline)</td><td class="n">35.1%</td><td class="n">48.0%</td><td class="n">1.477</td></tr>
+</table>
+<p class="src">Top-1/top-2 on 202 strong-constraint blocks; regret on all 958 blocks. Source: <code>results/eval_v5.csv</code>.</p>
+
+<div class="box warn"><b>What we may and may not claim.</b> Paired McNemar tests on the same blocks:
+we <b>significantly beat the utilisation baseline (p = 0.0025)</b>, and we are
+<b>statistically tied with the active-period method (p = 0.45)</b>. We therefore claim the first
+and never the second. Comparing independent confidence intervals would have been the wrong test
+for same-block data and would have let us overclaim.</div>
+
+<h3>4.2 Why regret, and not accuracy</h3>
+<p>Two independent findings point the same way. First, the sensitivity labels carry a
+<b>0.79-car noise floor</b>, while the median margin between the best and second-best station is
+only 0.50 cars — so the top-1 label survives noise in only ~50% of blocks and is close to a coin
+flip. Second, across four line topologies <b>top-1 collapses from 44.5% to 10.6% while regret
+stays between 1.208 and 1.431</b>. The operationally meaningful metric transfers; the argmax
+metric does not.</p>
+
+<h3>4.3 Value, stated honestly</h3>
+<table>
+<tr><th>Value line</th><th>Status</th></tr>
+<tr><td>Fewer cars lost to a mis-identified constraint (regret 1.309 vs 1.477 utilisation, on a 2.271-car ceiling)</td><td><b>measured</b></td></tr>
+<tr><td>Earlier warning: buffer countdown, 178 warnings, median error +0.57 min</td><td><b>measured</b></td></tr>
+<tr><td>Avoided false scrap: transducer-drift tools flagged for recalibration, not repair</td><td><b>measured</b></td></tr>
+<tr><td>Sensor spend avoided: 15.5% of forming warnings need no sensor at that station</td><td><b>measured</b></td></tr>
+<tr><td>Lead-time reduction under CONWIP release control</td><td><b>NOT measured — excluded</b></td></tr>
+</table>
+<div class="box warn"><b>One value line has been deliberately removed.</b> An earlier draft led the
+business case with "same throughput, 36% lower lead time, zero capital expenditure". No file in
+our results produces that number, so under our own rule — <i>a number is measured with a named
+source, cited with a named reference, or it does not appear</i> — it does not appear. We would
+rather present four defensible lines than five with one that dies under a single question.</div>
+
+<h2>5 · Handling the real-world complexities</h2>
+
+<table>
+<tr><th>#</th><th>Complexity</th><th>How we answer it</th><th>State</th></tr>
+<tr><td>1</td><td>Uneven sensor coverage; manual checklists</td>
+<td>Dark stations are bracketed between neighbours and named directly by buffer slope —
+<b>15.5% of all forming warnings name a station with no sensors</b> [15.0–15.9], n=29,060.
+Manual checks enter as Tier C <i>attested</i> data carrying entry latency, because a human record
+does not exist for the twin until someone types it in.</td><td>Demonstrated (dark);
+schema built and tested for checklists</td></tr>
+<tr><td>2</td><td>Multi-causal, intermittent root causes</td>
+<td>Separated by <b>scope</b> — who else is affected and who is not — rather than by statistics.
+The prototype separates fault classes (slowing, breakdown, starved, blocked). <b>Operator
+variation is deliberately excluded on ethical grounds:</b> we measure the station, never the
+person. That is a design choice, stated, not an oversight.</td><td>Partly demonstrated;
+scope engine designed</td></tr>
+<tr><td>3</td><td>PLC risk; retrofits only in maintenance windows</td>
+<td><b>The twin advises and never writes to line control</b> — a read-only boundary in ISA-95
+terms, shown on every screen. Sensing additions mount externally and publish on a separate
+network, so no PLC program changes and therefore no re-validation.</td><td>Boundary demonstrated;
+window-dated schedule designed</td></tr>
+<tr><td>4</td><td>Early defect surfaces late</td>
+<td>Onset is read <b>backwards off the CUSUM accumulator</b>, then the VIN thread lists exactly
+which vehicles carry it, <b>partitioned by where they are</b> — a car on the line is a rework
+instruction, one that has shipped is a customer event. Onset dated to <b>+2 minutes</b> of truth.</td><td>Demonstrated</td></tr>
+<tr><td>5</td><td>Three stakeholder views</td>
+<td>One record stream, three resolutions, with the reconciliation test passing exactly.</td><td>Demonstrated</td></tr>
+<tr><td>6</td><td>Scaling: layout, vintage, sensor maturity</td>
+<td>Measured across four topologies including a parallel-server pair that breaks the pure-series
+assumption. See §6.</td><td>Demonstrated (layout, sensor maturity); vintage unmodelled</td></tr>
+<tr><td>7</td><td>False alarms erode trust</td>
+<td>Confidence is <b>calibrated, not asserted</b> (ECE 0.479→0.025), and every alert is logged with
+a human confirm/override so precision can be shown over time. <b>48.6 alerts/shift</b> against the
+ISA-18.2 budget of &lt;150.</td><td>Demonstrated</td></tr>
+</table>
+
+<h2>6 · Does it survive a different line?</h2>
+
+<table>
+<tr><th>Line</th><th class="n">n blocks</th><th class="n">Top-1</th><th class="n">Regret</th><th class="n">Ceiling</th></tr>
+<tr><td>L1 — 20 stations, 1 merge <i>(reference)</i></td><td class="n">191</td><td class="n">44.5%</td><td class="n">1.208</td><td class="n">4.272</td></tr>
+<tr><td>L2 — 30 stations, 2 merges</td><td class="n">94</td><td class="n">10.6%</td><td class="n">1.218</td><td class="n">1.705</td></tr>
+<tr><td>L3 — 20 stations + parallel pair</td><td class="n">94</td><td class="n">13.8%</td><td class="n">1.431</td><td class="n">1.870</td></tr>
+<tr><td>L4 — 15 stations, 1 merge</td><td class="n">96</td><td class="n">21.9%</td><td class="n">1.221</td><td class="n">2.096</td></tr>
+</table>
+<p class="src">Source: <code>results/transfer_eval.csv</code>. L2–L4 are 12 runs each, so intervals are
+wide (L2 top-1 [5.9, 18.5]); these are directional, not definitive.</p>
+
+<p><b>Sensor maturity.</b> Running the entire pipeline from boundary scans with <b>zero PLC state
+tags</b> costs <b>+1.683 cars/block on L1</b> but only <b>+0.021 on L2</b>. State tags matter
+enormously where a strong constraint exists and almost not at all on a balanced line — so
+<b>instrument the lines with the most to gain first</b>. That is a more useful retrofit input than
+a single averaged degradation.</p>
+
+<h2>7 · Phased roadmap</h2>
+<table>
+<tr><th>Phase</th><th>What happens</th><th>Gate to pass before the next phase</th></tr>
+<tr><td><b>0 · Shadow</b><br>weeks 1–4</td><td>Subscribe to the streams the plant already produces and discards. No writes, no PLC changes.</td><td>Twin reproduces the plant's own throughput numbers</td></tr>
+<tr><td><b>1 · One supervisor</b><br>weeks 5–10</td><td>One line, one shift, one screen. Every alert confirmed or overridden by a person.</td><td>Running precision stable over ≥20 shifts; alerts within the ISA-18.2 budget</td></tr>
+<tr><td><b>2 · Floor</b><br>months 3–6</td><td>All shifts on that line. Manager view opens for planning.</td><td>Reconciliation holds; supervisors use it unprompted</td></tr>
+<tr><td><b>3 · Retrofit</b><br>next window</td><td>Costed sensor list installed at a scheduled shutdown, ranked by exposure closed per rupee.</td><td>Measured coverage improvement matches the prediction</td></tr>
+<tr><td><b>4 · Second line</b><br>months 6–12</td><td>Transfer. Report the commissioning curve honestly, not a yes/no.</td><td>Regret within the range measured across our four topologies</td></tr>
+<tr><td><b>—</b></td><td><b>Never: closed-loop write to line control.</b></td><td>—</td></tr>
+</table>
+
+<h2>8 · Key risks and mitigations</h2>
+<table>
+<tr><th>Risk</th><th>Why it is real</th><th>Mitigation</th></tr>
+<tr><td><b>False alarms erode trust</b></td><td>The brief names it; it is how these systems die</td>
+<td>Calibrated confidence (ECE 0.025), the five-field contract with suppression, and a ledger showing running precision. 48.6 alerts/shift vs a 150 budget</td></tr>
+<tr><td><b>Overconfidence in a weak signal</b></td><td>We have already been caught by this once</td>
+<td>We measured our own overtake-risk mechanism at <b>5.9% correct [1.0–27.0], n=17</b> against 70–100% stated confidence, declared it failed, and removed it from the live path. The buffer countdown replaced it</td></tr>
+<tr><td><b>Top-1 accuracy is a misleading target</b></td><td>0.79-car label-noise floor; argmax survives jitter in ~50% of blocks</td>
+<td>Regret is the headline metric; top-1 reported with Wilson intervals alongside</td></tr>
+<tr><td><b>Transfer may not hold</b></td><td>L2–L4 are 12 runs each</td>
+<td>Stated as directional. Regret held 1.21–1.43 across four topologies; the commissioning curve is reported, not asserted</td></tr>
+<tr><td><b>Touching production</b></td><td>Regulated, safety-certified control</td>
+<td>Read-only by construction and enforced by a test, not a promise</td></tr>
+<tr><td><b>Modelling people</b></td><td>Operator variation is a named cause and a real hazard</td>
+<td>Excluded by choice. We measure the station, never the person, and say so</td></tr>
+</table>
+
+<h2>9 · What we deliberately did not do</h2>
+<ul>
+<li><b>Equipment vintage</b> is one of the three scaling axes the brief names and we have no data axis for it. Unmodelled, and stated.</li>
+<li><b>Operator variation</b> — excluded on ethical grounds, as above.</li>
+<li><b>The CONWIP lead-time figure</b> — removed for want of a source file.</li>
+<li><b>Closed-loop control</b> — outside what any plant grants a prototype.</li>
+</ul>
+<p>Every one of these is a decision we can defend, which is worth more than a claim we cannot.</p>
+
+<div class="foot">
+All figures traceable to <code>results/</code> and <code>results/twin.db</code> (903 shifts, 86,742
+recorded decisions). Reproduce with <code>scripts/query_twin.py</code>,
+<code>scripts/eval_v5.py</code>, <code>scripts/eval_transfer.py</code>,
+<code>scripts/fit_calibration.py</code>. Repository:
+github.com/sagar2907/HipHipHooray_IIT_Kharagpur_DigitalTwin.ai_Prototype
+</div>
+
+</body></html>
