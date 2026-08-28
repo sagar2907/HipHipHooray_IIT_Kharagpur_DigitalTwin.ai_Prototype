@@ -278,13 +278,21 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
 const $ = id => document.getElementById(id);
 let STATIONS = [], DARK = new Set(), META = null;
 
-fetch('/meta').then(r=>r.json()).then(m=>{
-  META = m; STATIONS = m.spine; DARK = new Set(m.dark);
-  $('meta').textContent =
-    `${m.run} · ${m.stations} stations, ${m.instrumented} instrumented, `
-    + `${m.dark.length} dark · replay ${m.speed}×`;
-  drawLine(null, []);
-});
+function loadMeta(){
+  // MUST be re-fetched on every shift change. Each run has its OWN dark
+  // stations (run_001 is S10/S14/S15, run_002 is S05/S14/S15), so a set
+  // captured once at page load goes stale the moment the shift rolls - and
+  // the line would then draw the sensor coverage of the PREVIOUS run, which
+  // is precisely the claim this panel exists to make.
+  return fetch('/meta').then(r=>r.json()).then(m=>{
+    META = m; STATIONS = m.spine; DARK = new Set(m.dark);
+    $('meta').textContent =
+      `${m.run} · ${m.stations} stations, ${m.instrumented} instrumented, `
+      + `${m.dark.length} dark · replay ${m.speed}×`;
+    drawLine(null, []);
+  });
+}
+loadMeta();
 
 function drawLine(constraint, forming){
   const f = new Set(forming.map(x=>x.station));
@@ -490,9 +498,11 @@ es.onmessage = ev => {
   const f = JSON.parse(ev.data);
   if (f.done){ $('meta').textContent += ' · replay complete'; es.close(); return; }
   if (f.shift_change){
-    // ledger and calibration persist across shifts; shift-local state resets
-    $('meta').textContent = `${f.run} · shift ${f.shift_no} · ledger carries over`;
-    renderAlerts(); renderGeno();
+    // ledger and calibration persist across shifts; shift-local state resets.
+    // Re-read meta: the new run has its own dark stations and station count.
+    $('shiftno').textContent = f.shift_no;
+    $('runid').textContent = f.run;
+    loadMeta().then(()=>{ renderAlerts(); renderGeno(); });
     return;
   }
   if (f.shift_no) $('shiftno').textContent = f.shift_no;

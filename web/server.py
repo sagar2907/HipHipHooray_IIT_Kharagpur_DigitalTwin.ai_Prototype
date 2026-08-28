@@ -175,13 +175,28 @@ def resolve(index: int, outcome: str):
         return JSONResponse({"error": "outcome must be confirmed|overridden"},
                             status_code=400)
     loop: TwinLoop = STATE["loop"]
+    # An out-of-range index used to return {"ok": true} having done nothing,
+    # so a client would believe a supervisor's decision had been recorded when
+    # it had been dropped. Silently losing a decision is the worst possible
+    # failure for a trust ledger - it is the one thing the ledger exists to
+    # count.
+    if not (0 <= index < len(loop.ledger.alerts)):
+        return JSONResponse(
+            {"error": "no such alert", "index": index,
+             "alerts": len(loop.ledger.alerts)}, status_code=404)
+
+    a = loop.ledger.alerts[index]
+    if a.outcome != "pending":
+        return JSONResponse(
+            {"error": "already resolved", "index": index,
+             "outcome": a.outcome}, status_code=409)
+
     loop.resolve(index, outcome)
     # persist it: the override is our fastest label source, and a decision
     # that only lives in memory cannot rebuild the trust ledger later
-    if 0 <= index < len(loop.ledger.alerts):
-        a = loop.ledger.alerts[index]
-        STATE["store"].update_outcome(index, outcome, a.station, a.at_s)
-    return JSONResponse({"ok": True, "precision": loop.ledger.precision,
+    STATE["store"].update_outcome(index, outcome, a.station, a.at_s, a.shift_no)
+    return JSONResponse({"ok": True, "index": index, "station": a.station,
+                         "precision": loop.ledger.precision,
                          "scored": loop.ledger.scored})
 
 
@@ -197,7 +212,10 @@ def genealogy(at_s: int = 0):
     if rec.tools is None or rec.tools.empty:
         return JSONResponse({"available": False,
                              "reason": "this run has no tool telemetry"})
+    # clamp: a negative or past-horizon time is meaningless, and returning
+    # "available: true" for it invites a caller to trust an empty answer
     t = at_s or STATE.get("now_s") or rec.horizon_s
+    t = max(0, min(int(t), rec.horizon_s))
     rows = assess_all(rec.tools, rec.run.scans, t, rec.exit_station,
                       rec.run.buffers, STATE.get("constraint"))
     return JSONResponse({"available": True, "at_s": int(t),

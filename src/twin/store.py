@@ -256,7 +256,9 @@ class Store:
         mc = [(self.session_id, f.get("t_s"), f.get("shift_no"), f.get("run"),
                m.get("station"), m.get("result"), m.get("reason"),
                m.get("latency_min"), m.get("provenance"))
-              for m in (f.get("manual_checks") or [])]
+              # `manual_new` (every entry in this tick's window, OK included),
+              # never `manual_checks` (NOK-only, capped at 3, for the panel)
+              for m in (f.get("manual_new") or [])]
         if mc:
             self.db.executemany(
                 "INSERT INTO manual_checks (session_id, at_s, shift_no, run,"
@@ -278,7 +280,8 @@ class Store:
                 " kind, confidence, detail, margin_s, evidence,"
                 " persistence_min, action, cost_vehicles, cost_json, outcome)"
                 " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (self.session_id, a.at_s, shift_no, run, a.station, a.kind,
+                (self.session_id, a.at_s, getattr(a, 'shift_no', shift_no), run,
+                 a.station, a.kind,
                  a.confidence, a.detail, a.margin_s, json.dumps(a.evidence),
                  a.persistence_min, a.action, cost.get("vehicles"),
                  json.dumps(cost), a.outcome))
@@ -288,7 +291,7 @@ class Store:
         self._alerts_written = len(ledger.alerts)
 
     def update_outcome(self, ledger_index: int, outcome: str,
-                       station: str, at_s: float) -> None:
+                       station: str, at_s: float, shift_no: int) -> None:
         """Persist a human confirm/override.
 
         This was defined and never called, so every decision a supervisor made
@@ -296,15 +299,23 @@ class Store:
         calls the override our FASTEST LABEL SOURCE. Losing it meant the trust
         ledger could never be rebuilt from the record.
 
-        Matched on (station, at_s) rather than the ledger's list index, because
-        the index is a property of one process's memory and means nothing to
-        the database.
+        Matched on (session, shift, station, at_s) rather than the ledger's
+        list index, because the index is a property of one process's memory
+        and means nothing to the database.
+
+        SHIFT_NO IS PART OF THE KEY AND MUST BE. `at_s` is a within-shift
+        clock, so it repeats every shift: on the recorded data, (station,
+        at_s) alone matched up to 45 rows spread across 45 different shifts,
+        so one supervisor pressing "confirm" would have silently marked
+        forty-four other decisions that nobody made. That corrupts precisely
+        the ledger we use to argue the system is trustworthy.
         """
         if not self.enabled:
             return
         self.db.execute(
-            "UPDATE alerts SET outcome=? WHERE session_id=? AND station=?"
-            " AND at_s=?", (outcome, self.session_id, station, at_s))
+            "UPDATE alerts SET outcome=? WHERE session_id=? AND shift_no=?"
+            " AND station=? AND at_s=?",
+            (outcome, self.session_id, shift_no, station, at_s))
         self.db.commit()
 
     # -------------------------------------------------------------- shifts

@@ -71,6 +71,10 @@ class Alert:
     kind: str                  # "constraint" | "forming"
     confidence: float
     detail: str
+    # Which shift raised it. The ledger deliberately carries across shifts, and
+    # at_s is a within-shift clock, so without this an alert cannot be
+    # identified uniquely once a second shift has run.
+    shift_no: int = 1
     # --- the five contract fields ---
     margin_s: float = 0.0                       # 1
     evidence: list = field(default_factory=list)  # 2
@@ -255,6 +259,8 @@ class TwinLoop:
         mc = self.rec.manual_checks_at(t_s)
         if len(mc):
             nok = mc[mc.result == "NOK"]
+            # DISPLAY: the operator panel wants the exceptions, not a list of
+            # everything that passed.
             frame["manual_checks"] = [{
                 "station": r.station_id, "result": r.result,
                 "reason": r.reason_code,
@@ -262,6 +268,25 @@ class TwinLoop:
                 "provenance": r.provenance,
             } for _, r in nok.head(3).iterrows()]
             frame["manual_check_count"] = int(len(mc))
+
+        # STORAGE is a different question and needs the opposite bias. The
+        # display list is NOK-only and capped at three, so persisting it would
+        # have recorded failures and never passes - and a checklist's PASS RATE
+        # is the whole diagnostic (Part A 1.3: a checklist reading 100% OK
+        # against a 2% EOL failure rate is not measuring quality). We therefore
+        # store every entry, OK included.
+        #
+        # Windowed on the tick, not the display window: manual_checks_at()
+        # looks back 30 minutes for the panel, so storing that every 5 minutes
+        # would write each entry six times.
+        new = self.rec.manual_checks_at(t_s, window_s=self.step_s)
+        if len(new):
+            frame["manual_new"] = [{
+                "station": r.station_id, "result": r.result,
+                "reason": r.reason_code,
+                "latency_min": round(float(r.entry_latency_s) / 60, 1),
+                "provenance": r.provenance,
+            } for _, r in new.iterrows()]
 
         frame["compute_ms"] = round((time.perf_counter() - t0) * 1000, 1)
         return frame
@@ -403,7 +428,7 @@ class TwinLoop:
         if material and verdict.constraint != self._last_alert_station:
             a = Alert(
                 at_s=verdict.at_s, station=verdict.constraint, kind="constraint",
-                confidence=verdict.confidence,
+                shift_no=self.shift_no, confidence=verdict.confidence,
                 detail=f"constraint moved here · margin {verdict.margin:.1f}s",
                 margin_s=round(verdict.margin, 1), evidence=evidence,
                 persistence_min=persistence, action=presc["action"],
@@ -421,7 +446,7 @@ class TwinLoop:
                 continue
             a = Alert(
                 at_s=verdict.at_s, station=st, kind="forming",
-                confidence=verdict.confidence,
+                shift_no=self.shift_no, confidence=verdict.confidence,
                 detail=f"forming in ~{mins} min",
                 margin_s=round(verdict.margin, 1),
                 evidence=[{"signal": "buffer slope", "value": f"~{mins} min",
