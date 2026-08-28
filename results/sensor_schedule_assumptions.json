@@ -1,0 +1,19 @@
+{
+ "cost_per_affected_vehicle_inr": 4500,
+ "faults_per_station_per_year": 6,
+ "windows_per_year": 2,
+ "sensor": {
+  "barcode_reader": {
+   "cost_inr": 45000,
+   "note": "measures nothing; splits a dark block in two"
+  },
+  "photoeye": {
+   "cost_inr": 18000,
+   "note": "presence/absence at a boundary; no PLC change"
+  },
+  "digitised_checklist": {
+   "cost_inr": 12000,
+   "note": "turns an attested record into a timestamped one"
+  }
+ }
+}
