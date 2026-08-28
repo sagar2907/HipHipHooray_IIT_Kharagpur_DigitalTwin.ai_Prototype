@@ -86,7 +86,8 @@ recording. **Design is 100% done; the build is 0%.**
 | **08-28 15:10** | **Bug sweep — 4 bugs fixed**, incl. a ledger-corrupting key and the UI showing stale dark stations for 119/120 runs | Sagar | `done` |
 | **08-28 23:00** | **G DONE — proposal + deck both built.** All three deliverables exist | Sagar | `done` |
 | **08-28 23:40** | **Complexity 3 CLOSED** — window-dated sensor schedule. Coverage 5/7 | Sagar | `done` |
-| **08-31 day** | Freeze, rehearse, **record the prototype in the evening** | Both | `todo` |
+| **08-29 00:20** | **`DEMO_RUNBOOK.md`** — measured beat timeline + rehearsal; use **120×**, not 60× | Sagar | `done` |
+| **08-31 day** | Freeze at noon, rehearse, **record the prototype in the evening** (runbook §3) | Sagar | `todo` |
 | **08-31 night** | **SUBMIT** — proposal + prototype + pitch | Both | `todo` |
 
 Move the `▲` marker as workstreams complete.
@@ -350,7 +351,7 @@ above any feature.
 
 ## Right now
 
-_Last updated: 2026-08-28 23:40 by **Sagar**_
+_Last updated: 2026-08-29 00:20 by **Sagar**_
 
 | | Working on | Branch | ETA | Blocked by |
 |---|---|---|---|---|
@@ -399,6 +400,7 @@ Append-only, newest first. Both of us add to this.
 
 | Date | Who | What changed | Commit |
 |---|---|---|---|
+| **08-29 00:20** | Sagar | **`DEMO_RUNBOOK.md` — the recording is now the biggest risk, so it is de-risked with measurement, not hope.** Beat timeline produced by **replaying the shift and recording when each event actually becomes visible**, then **rehearsed against a live server**. **Key finding: at 60× the single best beat — two tools with opposite correct answers — does not appear until 3:30 of an 8-minute run.** At **120×** the shift is 4 min and it lands at ~1:45; rehearsal confirmed **1:48, both tools on screen together** (S05 wear → *service*, 58 vehicles contained; S06 sensor → *recalibrate only*, 76 contained). Runbook carries the exact setup command, a beat-by-beat timeline with what to say at each, a **failure-mode table**, and prepared answers to the 5 questions a judge is most likely to probe — each answered by **volunteering the weakness first**. Two operational details recorded so they are not discovered on camera: **warm up 20 s before recording** (the honest *"not enough units to rank yet"* state is a poor opening shot) and **pre-click the Leadership tab once** so its first data load is not live. | `8660d92` |
 | **08-28 23:40** | Sagar | **COMPLEXITY 3 CLOSED — the maintenance window is now the SHAPE of the output, not a sentence.** `scripts/sensor_schedule.py` → `results/sensor_schedule.csv`. **Measured** from `twin.db` (903 shifts): which stations are dark, how often each is named as the problem, and the **detection horizon** to the nearest instrumented station downstream — a *free inspector*, since that sensor already exists. **Assumed and printed on the face of the output**: cost/affected vehicle, faults/station-year, windows/year — each a single number a plant can replace, so a challenger changes a cell rather than rejecting the model. Output ranks by **exposure closed per rupee**, splits across two shutdowns (4 devices, Rs 72,000 each), and states **the cost of deferring: ~Rs 101,560 carried for another 6 months**. **Limitation printed with the result:** this dataset re-randomises dark stations every run, so each is dark in only 11–22% of shifts and horizons cluster 1.00–1.36 vehicles — the ranking is narrow. In a real plant coverage is *fixed*, so one station would be dark always, carry a long horizon and dominate. The mechanism is the deliverable; the thin spread is an artefact of homogeneous inputs, and L5 (fixed per-segment coverage) would separate sharply. **Coverage now 5 of 7 demonstrated.** | `1ced661` |
 | **08-28 23:00** | Sagar | **ALL THREE GRADED DELIVERABLES NOW EXIST.** (1) **Business Proposal** — `8_Proposal/`, 5 pages, structured exactly to the PS's six required sections, assembled from the 13 design docs + `results/twin.db`. Every figure names its source; the **CONWIP line is deleted outright** for want of one. (2) **Pitch deck** — `9_Deck/`, 12 slides, no template mandated so the design is ours: steel base with **colour reserved for deviation**, mirroring the ISA-101 principle the twin itself follows, with the station strip as the recurring motif. One slide per demonstrable complexity. (3) Prototype was already done. **Both corrected figures used throughout** (48.6 alerts/shift, 70.5% actionable — not the flattering single-run numbers). Deck gives equal space to **what we refuse to claim** (we do not beat active-period, p=0.45) and to the mechanism we **killed** (overtake risk, 5.9% vs 70–100% claimed). Visual QA via PowerPoint COM export caught one real defect — a caption duplicated on both cards of the genealogy slide instead of framing the pair once. | `91c4243`, `7923cc7` |
 | **08-28 17:30** | Sagar | **DECISION: stop at 5/7 demonstrated. Do NOT chase 7/7.** The PS says outright *"you are not expected to address every point listed"* and calls the reference parameters *"directional, not a fixed dataset — make your own reasonable assumptions, state them clearly"*. **C2 → 15 min in the proposal** (state the operator-variation exclusion; the PS names it, so declaring it is a strength). **C3 → 30 Aug, only if the proposal is on track** (window-dated sensor schedule — a real differentiator). **C1 → do NOT switch to L5.** Switching datasets the day before recording is what breaks demos: L5 has **no truth labels**, a **wrong dark ratio**, and would be one day old. The station-count motivation also evaporates — we can now say something **stronger than owning 40 stations**: *validated on 20, with measured transfer to a 30-station two-merge line and to a parallel-pair topology.* The dark half of C1 is already demonstrated at 15.5%; the manual-checklist half is addressed in the proposal, where the design is written and the schema built and tested. **Rationale: a closed complexity moves part of one criterion; a missing proposal costs a third of the submission.** Four complexities proven with intervals plus two honestly scoped beats seven thin claims — which is the trade this project has made throughout. | — |
@@ -634,6 +636,8 @@ Add the moment something stops you — don't wait for the checkpoint.
 |---|---|
 | `PROGRESS.md` | This file — canonical live log |
 | **`PLAN.md`** | **The final-submission plan — read this first if you have been away** |
+| **`DEMO_RUNBOOK.md`** | **How to record the demo** — measured beat timings, failure modes, prepared answers |
+| `8_Proposal/` · `9_Deck/` | The two document deliverables |
 | `docs/dataset/` | Dataset documentation (v2/v3/v5/v6_L5) — was trapped under `.gitignore` until 28 Aug |
 | `scripts/verify_*.py` | The evidence behind the defect #6 rejection and the #7 calibration fix |
 | `DigitalTwin_Model_Parameters.pdf` | Every parameter fed to the model |
