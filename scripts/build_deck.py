@@ -218,15 +218,21 @@ def build():
     tb(s, 0.95, 2.72, 12, 0.35,
        "hatched = no sensors at all   ·   red = the constraint   ·   amber = forming",
        11.5, False, MUTED)
-    kpi(s, 0.7, 3.35, 4.0, "15.5%", "of all forming-bottleneck warnings name a station\n"
-        "with zero instrumentation   [15.0–15.9], n=29,060", BLUE, vsize=36)
-    tb(s, 5.05, 3.42, 7.6, 2.2,
-       "A dark station emits no scans and no states. It is recovered from the buffer slope"
-       " either side —\nand that is free: the sensors are already there, on its neighbours."
-       "\n\nManual checklists enter as a fourth data tier — attested — carrying the entry"
-       " latency, because a human\nrecord does not exist for the twin until someone types it in."
-       " A checklist that always reads OK is\nmeasuring compliance with the checklist, not quality.",
-       13.5, False, INK, line=1.35)
+    kpi(s, 0.7, 3.35, 3.85, "15.5%", "of all forming-bottleneck warnings name a\n"
+        "station with zero instrumentation   [15.0–15.9]\nn=29,060", BLUE, vsize=32)
+    kpi(s, 4.75, 3.35, 3.85, "2.76%", "of vehicles a manual checklist PASSED\n"
+        "went on to fail end-of-line   ·   96.51% pass rate\nn=31,329 checklist entries", ALARM, vsize=32)
+    tb(s, 8.8, 3.42, 3.85, 2.2,
+       "Body + final assembly:\n75.3% instrumented,\n24.7% on manual checks —\n"
+       "an exact match to the\nbrief's own reference\nparameters.",
+       13, True, GOOD, line=1.3)
+    tb(s, 0.7, 5.15, 11.93, 1.05,
+       "A checklist reading near-100% against a non-zero EOL failure rate is measuring compliance"
+       " with the checklist,\nnot quality — exactly what the design predicted, and structurally the"
+       " same failure as our sensor_bias\ntools: the instrument is the thing that is wrong. Manual"
+       " checks enter as a fourth data tier — attested —\ncarrying the entry latency (mean 4.8 min),"
+       " because a human record does not exist until someone types it in.",
+       12.5, False, MUTED, line=1.32)
 
     # ---------------------------------------------------------- 5 prescription
     s = blank(prs)

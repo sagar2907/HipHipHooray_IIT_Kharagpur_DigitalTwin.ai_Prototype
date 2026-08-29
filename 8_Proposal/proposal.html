@@ -182,9 +182,12 @@ rather present four defensible lines than five with one that dies under a single
 <tr><td>1</td><td>Uneven sensor coverage; manual checklists</td>
 <td>Dark stations are bracketed between neighbours and named directly by buffer slope —
 <b>15.5% of all forming warnings name a station with no sensors</b> [15.0–15.9], n=29,060.
-Manual checks enter as Tier C <i>attested</i> data carrying entry latency, because a human record
-does not exist for the twin until someone types it in.</td><td>Demonstrated (dark);
-schema built and tested for checklists</td></tr>
+Manual checks enter as Tier C <i>attested</i> data carrying entry latency.
+<b>And we tested whether the checklist is honest</b>: across 31,329 entries it passes 96.51% of
+vehicles, yet <b>835 of those it passed went on to fail end-of-line — a 2.76% escape rate</b>,
+with a mean 4.8-minute lag before a human records anything at all. A checklist reading near-100%
+against a non-zero EOL failure rate is measuring compliance with the checklist, not quality.
+</td><td>Demonstrated</td></tr>
 <tr><td>2</td><td>Multi-causal, intermittent root causes</td>
 <td>Separated by <b>scope</b> — who else is affected and who is not — rather than by statistics.
 The prototype separates fault classes (slowing, breakdown, starved, blocked). <b>Operator
@@ -194,8 +197,10 @@ scope engine designed</td></tr>
 <tr><td>3</td><td>PLC risk; retrofits only in maintenance windows</td>
 <td><b>The twin advises and never writes to line control</b> — a read-only boundary in ISA-95
 terms, shown on every screen. Sensing additions mount externally and publish on a separate
-network, so no PLC program changes and therefore no re-validation.</td><td>Boundary demonstrated;
-window-dated schedule designed</td></tr>
+network, so no PLC program changes and therefore no re-validation. The retrofit list itself is
+<b>a window-dated schedule, not a wishlist</b> — ranked by exposure closed per rupee, split across
+two shutdowns, with the cost of deferring stated explicitly (~₹101,560 carried for six months).</td>
+<td>Demonstrated</td></tr>
 <tr><td>4</td><td>Early defect surfaces late</td>
 <td>Onset is read <b>backwards off the CUSUM accumulator</b>, then the VIN thread lists exactly
 which vehicles carry it, <b>partitioned by where they are</b> — a car on the line is a rework
@@ -210,6 +215,14 @@ assumption. See §6.</td><td>Demonstrated (layout, sensor maturity); vintage unm
 a human confirm/override so precision can be shown over time. <b>48.6 alerts/shift</b> against the
 ISA-18.2 budget of &lt;150.</td><td>Demonstrated</td></tr>
 </table>
+
+<div class="box good"><b>Against the brief's own reference parameters.</b> The PS assumes
+"a majority of stations well-instrumented, a meaningful minority reliant on manual checks" across
+30–50 stations spanning body, paint and final assembly. On our 40-station segmented layout,
+body + final assembly — the 30 stations where per-unit measurement is meaningful — sit at
+<b>75.3% instrumented, 24.7% on manual checks: an exact match.</b> Paint sits at 90% dark
+<i>by design</i>, since booth-level sampling is how paint shops work everywhere — a property of
+the process, not a coverage gap we failed to close.</div>
 
 <h2>6 · Does it survive a different line?</h2>
 
