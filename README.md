@@ -299,3 +299,11 @@ their entry latency, and the twin tests whether they are honest: across 31,329
 entries the checklist passes 96.51% of vehicles, yet **835 of those went on to
 fail end-of-line — a 2.76% escape rate.** A checklist reading near-100% against
 a non-zero failure rate is measuring compliance with the checklist, not quality.
+
+---
+
+## License
+
+All rights reserved — see [`LICENSE`](LICENSE). This repository is public for
+evaluation purposes only and is not open-source; no reuse is permitted
+without the authors' written consent.
