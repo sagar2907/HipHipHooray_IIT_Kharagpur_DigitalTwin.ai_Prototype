@@ -1,0 +1,291 @@
+<!doctype html>
+<title>DigitalTwin.ai — Overview</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#11141c; --ink:#e9ebf0; --muted:#98a0b2; --line:#242833;
+    --purple:#b98cff; --purple2:#d6bcff;
+    --wear:#ff6f61; --lie:#4ea1ff; --ok:#4ade80; --warn:#ffc247; --dark:#5a6577;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg)}
+  #stage{width:1280px;height:720px;overflow:hidden;display:flex;flex-direction:column;
+         font-family:Arial,Helvetica,sans-serif;background:var(--bg)}
+  svg{display:block;width:1280px;height:540px;flex:0 0 auto}
+  #cap{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
+       padding:0 60px;border-top:1px solid var(--line);font:600 25px/1.35 Arial;color:#f2f4f8}
+  #cap span{opacity:0;transition:opacity .22s ease}
+  #cap span.on{opacity:1}
+  .fade{opacity:0;transition:opacity .5s ease}
+  .fade.on{opacity:1}
+  .noanim *{transition:none!important}
+  #bar{width:1280px;display:flex;gap:10px;align-items:center;padding:8px 12px;background:#05060a}
+  button{background:#6d28d9;color:#fff;border:0;padding:7px 14px;border-radius:5px;font:bold 12px Arial;cursor:pointer}
+  button.ghost{background:#242833}
+  #clock{font:bold 13px Consolas,monospace;color:#fff}
+  #bar.bare{display:none}
+</style>
+
+<div id="stage">
+  <svg id="cv" viewBox="0 0 1280 540"></svg>
+  <div id="cap"><span id="capText"></span></div>
+</div>
+<div id="bar">
+  <button id="play">▶ Play</button>
+  <button id="restart" class="ghost">⟲ Restart</button>
+  <span id="clock">0:00 / 1:00</span>
+  <span style="font:12px Arial;color:#7b8296">Space play/pause · R restart · add ?bare=1 to hide this bar for capture</span>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg", cv=document.getElementById("cv");
+function E(t,a={},p=cv){const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);p.appendChild(n);return n;}
+function T(x,y,s,{size=22,weight="bold",fill="var(--ink)",anchor="middle",parent=cv,style=""}={}){
+  const t=E("text",{x,y,"text-anchor":anchor,"font-size":size,"font-weight":weight,fill,
+    "font-family":"Arial,Helvetica,sans-serif",style},parent);t.textContent=s;return t;}
+let sceneIvs=[];
+function trackIv(iv){sceneIvs.push(iv);return iv;}
+function clearAll(){
+  sceneIvs.forEach(iv=>clearInterval(iv));sceneIvs=[];
+  while(cv.firstChild)cv.removeChild(cv.firstChild);
+}
+function fadeIn(el,delay=0){el.classList.add("fade");setTimeout(()=>el.classList.add("on"),delay);}
+
+/* ---------- reusable: station line ---------- */
+const SX=60, SW=132, SGAP=14, SY=210, SH=90, N=8;
+const stx=i=>SX+i*(SW+SGAP);
+function buildLine(g){
+  const stations=[];
+  const defs=E("defs",{},g);
+  const m=E("marker",{id:"ah2",viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:5,markerHeight:5,
+    orient:"auto-start-reverse"},defs);
+  E("path",{d:"M0 0 L10 5 L0 10 z",fill:"#4a5262"},m);
+  for(let i=0;i<N;i++){
+    const x=stx(i);
+    const rect=E("rect",{x,y:SY,width:SW,height:SH,rx:8,fill:"#12151c",stroke:"#2b313d","stroke-width":3},g);
+    const label=T(x+SW/2,SY+SH/2+7,"S"+String(i+1).padStart(2,"0"),{size:20,fill:"#7b8296",parent:g});
+    if(i<N-1)E("path",{d:`M${x+SW+3} ${SY+SH/2} L${x+SW+SGAP-4} ${SY+SH/2}`,stroke:"#3a414f",
+      "stroke-width":3,fill:"none","marker-end":"url(#ah2)"},g);
+    stations.push({rect,label,x});
+  }
+  return stations;
+}
+function setStation(s,{fill,stroke,dash=false}){
+  s.rect.setAttribute("fill",fill); s.rect.setAttribute("stroke",stroke);
+  s.rect.setAttribute("stroke-dasharray",dash?"9 6":"none");
+}
+
+/* ---------- badge ---------- */
+function badge(g,txt,col){
+  const w=txt.length*11+56;
+  const r=E("rect",{x:56,y:34,width:w,height:38,rx:19,fill:"none",stroke:col,"stroke-width":3},g);
+  const t=T(56+w/2,58,txt,{size:18,fill:col,parent:g});
+  r.classList.add("fade");t.classList.add("fade");
+  setTimeout(()=>{r.classList.add("on");t.classList.add("on")},60);
+}
+
+/* ================= SCENES ================= */
+function scene1(){ // THE LINE / THE PROBLEM  (0-10s)
+  clearAll();
+  const g=E("g",{});
+  badge(g,"THE PROBLEM",'var(--wear)');
+  const stations=buildLine(g);
+  stations.forEach(s=>setStation(s,{fill:"#12151c",stroke:"#2b313d"}));
+  const car=E("circle",{r:8,cx:SX,cy:SY+SH/2,fill:"var(--purple)"},g);
+  car.classList.add("fade");
+  setTimeout(()=>car.classList.add("on"),200);
+
+  // constraint highlight jumps stations 2 -> 5 -> 2 to show it moving
+  const seq=[2,5,2];let si=0;
+  const highlight=()=>{
+    stations.forEach((s,i)=>setStation(s,i===seq[si]?{fill:"#2c1418",stroke:"var(--wear)"}:{fill:"#12151c",stroke:"#2b313d"}));
+    si=(si+1)%seq.length;
+  };
+  highlight();
+  trackIv(setInterval(highlight,2200));
+
+  // car flows the whole line, flares red briefly at station 3 (early defect),
+  // then keeps going uncaught all the way to the end - the point of the beat
+  let p=0,flared=false;
+  const totalW=stx(N-1)+SW-SX;
+  trackIv(setInterval(()=>{
+    p=Math.min(1,p+0.014);
+    const x=SX+p*totalW;
+    car.setAttribute("cx",x);
+    if(p>0.30&&p<0.36&&!flared){flared=true;car.setAttribute("fill","var(--wear)");
+      setTimeout(()=>car.setAttribute("fill","var(--purple)"),650);}
+    if(p>=1)p=0;
+  },35));
+}
+
+function scene2(){ // UNEVEN SENSORS (10-22s)
+  clearAll();
+  const g=E("g",{});
+  badge(g,"UNEVEN SENSORS",'var(--dark)');
+  const stations=buildLine(g);
+  const darkIdx=[3,5];
+  stations.forEach((s,i)=>setStation(s,darkIdx.includes(i)?{fill:"#141720",stroke:"var(--dark)",dash:true}:{fill:"#12151c",stroke:"#2b313d"}));
+  darkIdx.forEach(i=>T(stations[i].x+SW/2,SY+SH+26,"DARK · no sensor",{size:14,weight:"normal",fill:"var(--dark)",parent:g}));
+
+  // bracket arrows from neighbours into the first dark station
+  const di=darkIdx[0], x=stx(di);
+  const bl=E("path",{d:`M${stx(di-1)+SW/2} ${SY-22} L${x+8} ${SY-22} L${x+8} ${SY-6}`,
+    stroke:"var(--purple2)","stroke-width":2.5,fill:"none","marker-end":"url(#ah2)"},g);
+  const br=E("path",{d:`M${stx(di+1)+SW/2} ${SY-22} L${x+SW-8} ${SY-22} L${x+SW-8} ${SY-6}`,
+    stroke:"var(--purple2)","stroke-width":2.5,fill:"none","marker-end":"url(#ah2)"},g);
+  [bl,br].forEach(el=>{el.classList.add("fade");setTimeout(()=>el.classList.add("on"),400);});
+  T(x+SW/2,SY-30,"bracketed between neighbours",{size:14,weight:"normal",fill:"var(--purple2)",parent:g}).classList.add("fade");
+
+  // manual-checklist honesty card - placed clear of the line, in open space below
+  const cx=530,cy=SY+SH+70;
+  const card=E("rect",{x:cx,y:cy,width:220,height:96,rx:10,fill:"#12151c",stroke:"#2b313d","stroke-width":2},g);
+  T(cx+110,cy+30,"MANUAL CHECKLIST",{size:14,fill:"var(--muted)",parent:g});
+  const pass=T(cx+110,cy+66,"96.5% pass",{size:22,fill:"var(--ok)",parent:g});
+  [card,pass].forEach(el=>{el.classList.add("fade");setTimeout(()=>el.classList.add("on"),700);});
+  cues.push({t:9500+2600,fn:()=>{
+    pass.textContent="2.8% real escape rate";pass.setAttribute("fill","var(--wear)");
+  },done:false});
+}
+
+function scene3(){ // PRESCRIPTIVE (22-34s) - opposite actions, two tools
+  clearAll();
+  const g=E("g",{});
+  badge(g,"PRESCRIPTIVE, NOT JUST PREDICTIVE",'var(--purple2)');
+  const mk=(x,tag,tagcol,head,sub,delay)=>{
+    const card=E("rect",{x,y:150,width:520,height:300,rx:14,fill:"#12151c",stroke:tagcol,"stroke-width":3},g);
+    const tg=E("rect",{x:x+28,y:186,width:tag.length*9+28,height:32,rx:16,fill:tagcol},g);
+    const tagT=T(x+28+(tag.length*9+28)/2,208,tag,{size:14,fill:"#0b0d12",parent:g});
+    const headT=T(x+28,266,head,{size:26,anchor:"start",fill:"var(--ink)",parent:g});
+    const subT=T(x+28,300,sub,{size:15,weight:"normal",anchor:"start",fill:"var(--muted)",parent:g});
+    [card,tg,tagT,headT,subT].forEach(el=>{el.classList.add("fade");setTimeout(()=>el.classList.add("on"),delay);});
+  };
+  mk(60,"S05 · REAL WEAR",'var(--wear)',"SERVICE the tool","torque moved AND current moved",300);
+  mk(700,"S06 · SENSOR LYING",'var(--lie)',"RECALIBRATE only","torque moved, current did not",700);
+  const line=T(640,470,"same symptom  ·  opposite correct actions",{size:18,weight:"normal",fill:"var(--muted)",parent:g});
+  line.classList.add("fade");setTimeout(()=>line.classList.add("on"),1400);
+}
+
+function scene4(){ // TRUST (34-46s)
+  clearAll();
+  const g=E("g",{});
+  badge(g,"TRUST, MEASURED NOT ASSERTED",'var(--ok)');
+  // claimed vs calibrated
+  const y1=170;
+  const claimed=E("g",{},g);
+  E("rect",{x:80,y:y1,width:430,height:64,rx:10,fill:"#2c1418",stroke:"var(--wear)","stroke-width":2.5},claimed);
+  T(295,y1+40,"CLAIMED  0.997 confidence",{size:20,fill:"var(--wear)",parent:claimed});
+  claimed.classList.add("fade");setTimeout(()=>claimed.classList.add("on"),200);
+
+  const calib=E("g",{},g);
+  E("rect",{x:80,y:y1+96,width:430,height:64,rx:10,fill:"#0f2418",stroke:"var(--ok)","stroke-width":2.5},calib);
+  T(295,y1+96+40,"CALIBRATED  0.11 · honest",{size:20,fill:"var(--ok)",parent:calib});
+  calib.classList.add("fade");setTimeout(()=>calib.classList.add("on"),1200);
+
+  // ledger counter
+  const lx=650;
+  E("rect",{x:lx,y:y1,width:530,height:260,rx:12,fill:"#12151c",stroke:"#2b313d","stroke-width":2},g);
+  T(lx+24,y1+40,"ALERT LEDGER",{size:16,anchor:"start",fill:"var(--muted)",parent:g});
+  const cnt=T(lx+24,y1+108,"0",{size:56,anchor:"start",fill:"var(--purple2)",parent:g,weight:"800"});
+  T(lx+24,y1+140,"calls confirmed or overridden",{size:14,weight:"normal",anchor:"start",fill:"var(--muted)",parent:g});
+  const supp=T(lx+24,y1+200,"7 suppressed — no evidence, no alert",{size:16,weight:"normal",anchor:"start",fill:"var(--warn)",parent:g});
+  supp.classList.add("fade");setTimeout(()=>supp.classList.add("on"),2200);
+  let n=0,iv;
+  iv=setInterval(()=>{n++;cnt.textContent=n;if(n>=48)clearInterval(iv);},130);
+  trackIv(iv);
+}
+
+function scene5(){ // THREE VIEWS (46-58s)
+  clearAll();
+  const g=E("g",{});
+  badge(g,"ONE MODEL, THREE VIEWS",'var(--purple2)');
+  const items=[["SUPERVISOR","real time"],["MANAGER","weekly trends"],["LEADERSHIP","investment case"]];
+  const boxes=items.map((it,i)=>{
+    const x=90+i*270;
+    const card=E("rect",{x,y:150,width:220,height:150,rx:12,fill:"#12151c",stroke:"var(--purple)","stroke-width":2.5},g);
+    T(x+110,210,it[0],{size:20,fill:"var(--ink)",parent:g});
+    T(x+110,240,it[1],{size:14,weight:"normal",fill:"var(--muted)",parent:g});
+    card.classList.add("fade");setTimeout(()=>card.classList.add("on"),300+i*350);
+    return {x:x+110,y:300};
+  });
+  boxes.forEach((b,i)=>{
+    const p=E("path",{d:`M${b.x} ${b.y} L640 400`,stroke:"var(--purple)","stroke-width":2,fill:"none","stroke-dasharray":"4 4"},g);
+    p.classList.add("fade");setTimeout(()=>p.classList.add("on"),1400+i*150);
+  });
+  const pass=E("g",{},g);
+  E("rect",{x:470,y:400,width:340,height:76,rx:38,fill:"#0f2418",stroke:"var(--ok)","stroke-width":3},pass);
+  T(640,447,"PASS — reconciles exactly",{size:16,fill:"var(--ok)",parent:pass});
+  pass.classList.add("fade");setTimeout(()=>pass.classList.add("on"),2100);
+}
+
+function scene6(){ // CLOSE (58-62s)
+  clearAll();
+  const g=E("g",{});
+  const t=T(640,250,"DigitalTwin.ai",{size:64,fill:"var(--ink)",parent:g,weight:"800"});
+  const s=T(640,310,"The plant already has the data.",{size:24,weight:"normal",fill:"var(--purple2)",parent:g});
+  [t,s].forEach((el,i)=>{el.classList.add("fade");setTimeout(()=>el.classList.add("on"),300+i*300);});
+}
+
+/* ================= driver ================= */
+const SCENES=[
+  {t:0,     vo:"A mixed-model assembly line. The constraint moves roughly twenty times a shift, and a defect caught late has already been built into every car since it started.", build:scene1},
+  {t:10000, vo:"Not every station is wired. Some are a person with a clipboard — and we tested whether that clipboard is honest. A ninety-six-point-five percent pass rate hid a real two-point-eight percent escape rate.", build:scene2},
+  {t:22000, vo:"Two tools can show the identical symptom and need opposite fixes. We separate real wear from a lying sensor by checking whether a mechanically coupled channel moved too — service one, recalibrate the other, never guess.", build:scene3},
+  {t:34000, vo:"Confidence is calibrated against held-out shifts, not asserted. An alert that cannot state its evidence is suppressed, not shown — and every human decision is logged, so precision is proven over time, not claimed once.", build:scene4},
+  {t:46000, vo:"One record stream answers a supervisor in real time, a manager's week, and leadership's investment case — and we prove it is one twin: every total reconciles exactly.", build:scene5},
+  {t:58000, vo:"DigitalTwin.ai. The plant already has the data.", build:scene6},
+];
+const TOTAL=62000;
+let cues=[];
+SCENES.forEach(s=>cues.push({t:s.t,fn:s.build,done:false}));
+
+function splitVO(vo){
+  const parts=vo.split(/(?<=[.—,;])\s+/);
+  const merged=[];parts.forEach(p=>{
+    const last=merged[merged.length-1],w=p.split(/\s+/).length;
+    if(last&&(last.split(/\s+/).length<7||w<6)&&last.split(/\s+/).length+w<=20)merged[merged.length-1]=last+" "+p;
+    else merged.push(p);
+  });
+  return merged;
+}
+function buildChunks(){
+  const out=[];
+  SCENES.forEach((s,i)=>{
+    const end=(i+1<SCENES.length)?SCENES[i+1].t:TOTAL,span=end-s.t;
+    const parts=splitVO(s.vo),wc=parts.map(p=>p.split(/\s+/).length);
+    const tot=wc.reduce((a,b)=>a+b,0);let acc=0;
+    parts.forEach((p,k)=>{const a=s.t+(acc/tot)*span;acc+=wc[k];out.push({t:a,end:s.t+(acc/tot)*span,text:p});});
+  });
+  return out;
+}
+const CAPS=buildChunks();
+const capEl=document.getElementById("capText");
+let lastCap=null;
+function paintCaption(){
+  const c=CAPS.find(c=>elapsed>=c.t&&elapsed<c.end);
+  const txt=c?c.text:"";
+  if(txt!==lastCap){lastCap=txt;capEl.classList.remove("on");capEl.textContent=txt;
+    if(txt)requestAnimationFrame(()=>capEl.classList.add("on"));}
+}
+let playing=false,elapsed=0,t0=0,raf=null;
+const clock=document.getElementById("clock");
+const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
+function paint(){clock.textContent=fmt(elapsed)+" / "+fmt(TOTAL);paintCaption();}
+function frame(now){if(!playing)return;elapsed=now-t0;
+  cues.forEach(c=>{if(!c.done&&elapsed>=c.t){try{c.fn();}catch(e){console.error(e);}c.done=true;}});
+  paint();
+  if(elapsed<TOTAL)raf=requestAnimationFrame(frame);
+  else{playing=false;document.getElementById("play").textContent="▶ Play";}}
+function play(){if(playing)return;playing=true;t0=performance.now()-elapsed;
+  document.getElementById("play").textContent="❚❚ Pause";raf=requestAnimationFrame(frame);}
+function pause(){playing=false;cancelAnimationFrame(raf);document.getElementById("play").textContent="▶ Play";}
+function hardReset(){pause();elapsed=0;cues.forEach(c=>c.done=false);clearAll();paint();}
+document.getElementById("play").onclick=()=>playing?pause():play();
+document.getElementById("restart").onclick=()=>hardReset();
+addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();playing?pause():play();}
+  if(e.key==="r"||e.key==="R")hardReset();
+});
+
+if(new URLSearchParams(location.search).get("bare")==="1")document.getElementById("bar").classList.add("bare");
+if(new URLSearchParams(location.search).get("auto")==="1"){requestAnimationFrame(()=>requestAnimationFrame(play));}
+paint();
+</script>

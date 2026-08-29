@@ -1,0 +1,202 @@
+<!doctype html>
+<title>DigitalTwin.ai — Deployment</title>
+<style>
+  :root{
+    --bg:#0b0d12; --ink:#e9ebf0; --muted:#98a0b2; --line:#242833;
+    --purple:#b98cff; --purple2:#d6bcff; --ok:#4ade80; --alarm:#ff6f61; --warn:#ffc247;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg)}
+  #stage{width:1280px;height:720px;overflow:hidden;display:flex;flex-direction:column;
+         font-family:Arial,Helvetica,sans-serif;background:var(--bg)}
+  svg{display:block;width:1280px;height:540px;flex:0 0 auto}
+  #cap{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
+       padding:0 60px;border-top:1px solid var(--line);font:600 25px/1.35 Arial;color:#f2f4f8}
+  #cap span{opacity:0;transition:opacity .22s ease}
+  #cap span.on{opacity:1}
+  .fade{opacity:0;transition:opacity .5s ease}
+  .fade.on{opacity:1}
+  #bar{width:1280px;display:flex;gap:10px;align-items:center;padding:8px 12px;background:#05060a}
+  button{background:#6d28d9;color:#fff;border:0;padding:7px 14px;border-radius:5px;font:bold 12px Arial;cursor:pointer}
+  button.ghost{background:#242833}
+  #clock{font:bold 13px Consolas,monospace;color:#fff}
+  #bar.bare{display:none}
+</style>
+
+<div id="stage">
+  <svg id="cv" viewBox="0 0 1280 540"></svg>
+  <div id="cap"><span id="capText"></span></div>
+</div>
+<div id="bar">
+  <button id="play">▶ Play</button>
+  <button id="restart" class="ghost">⟲ Restart</button>
+  <span id="clock">0:00 / 0:38</span>
+  <span style="font:12px Arial;color:#7b8296">add ?bare=1 to hide this bar for capture</span>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg", cv=document.getElementById("cv");
+function E(t,a={},p=cv){const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);p.appendChild(n);return n;}
+function T(x,y,s,{size=22,weight="bold",fill="var(--ink)",anchor="middle",parent=cv}={}){
+  const t=E("text",{x,y,"text-anchor":anchor,"font-size":size,"font-weight":weight,fill,
+    "font-family":"Arial,Helvetica,sans-serif"},parent);t.textContent=s;return t;}
+let sceneIvs=[];
+function trackIv(iv){sceneIvs.push(iv);return iv;}
+function clearAll(){sceneIvs.forEach(iv=>clearInterval(iv));sceneIvs=[];while(cv.firstChild)cv.removeChild(cv.firstChild);}
+function fadeGroup(els,delay){els.forEach(el=>el.classList.add("fade"));setTimeout(()=>els.forEach(el=>el.classList.add("on")),delay);}
+function badge(g,txt,col){
+  const w=txt.length*11+56;
+  const r=E("rect",{x:56,y:34,width:w,height:38,rx:19,fill:"none",stroke:col,"stroke-width":3},g);
+  const t=T(56+w/2,58,txt,{size:18,fill:col,parent:g});
+  fadeGroup([r,t],60);
+}
+
+/* ================= SCENES ================= */
+function scene1(){ // WHAT IT NEEDS (0-10s)
+  clearAll();
+  const g=E("g",{});
+  badge(g,"WHAT IT NEEDS",'var(--purple2)');
+  const cx=640,cy=300,r=76;
+  const hex=E("circle",{cx,cy,r,fill:"#12151c",stroke:"var(--purple)","stroke-width":3},g);
+  const hexT=T(cx,cy-4,"THE",{size:15,fill:"var(--purple2)",parent:g});
+  const hexT2=T(cx,cy+20,"TWIN",{size:22,fill:"var(--ink)",parent:g});
+  fadeGroup([hex,hexT,hexT2],200);
+
+  const inputs=["UNIT SCANS","PLC STATE TAGS","BUFFER COUNTS","TOOL RESULTS","ANDON LOG","REWORK LOG","CALENDAR"];
+  const R=210;
+  inputs.forEach((label,i)=>{
+    const ang=(-90 + i*(360/inputs.length)) * Math.PI/180;
+    const x=cx+R*Math.cos(ang), y=cy+R*Math.sin(ang)*0.62;
+    const w=label.length*8+26;
+    const box=E("rect",{x:x-w/2,y:y-20,width:w,height:40,rx:8,fill:"#12151c",stroke:"#3a414f","stroke-width":2},g);
+    const txt=T(x,y+5,label,{size:13,weight:"normal",fill:"var(--muted)",parent:g});
+    const line=E("line",{x1:x+(cx>x?18:-18),y1:y,x2:cx+(cx>x?r+6:-r-6),y2:cy,stroke:"#3a414f","stroke-width":1.5,
+      "stroke-dasharray":"4 4"},g);
+    fadeGroup([box,txt,line],450+i*160);
+  });
+  const foot=T(cx,500,"no new hardware to switch it on",{size:16,weight:"normal",fill:"var(--muted)",parent:g});
+  fadeGroup([foot],2000);
+}
+
+function scene2(){ // WHAT IT NEVER DOES (10-20s)
+  clearAll();
+  const g=E("g",{});
+  badge(g,"WHAT IT NEVER DOES",'var(--alarm)');
+  const cx=340,cy=280;
+  const hex=E("circle",{cx,cy,r:66,fill:"#12151c",stroke:"var(--purple)","stroke-width":3},g);
+  const hexT=T(cx,cy+7,"TWIN",{size:20,fill:"var(--ink)",parent:g});
+  fadeGroup([hex,hexT],150);
+
+  // arrow to advisory card (allowed)
+  const adv=E("g",{},g);
+  E("path",{d:"M414 260 L 620 220",stroke:"var(--ok)","stroke-width":3,fill:"none","marker-end":"url(#ok-ah)"},adv);
+  const defs=E("defs",{},g);
+  const m1=E("marker",{id:"ok-ah",viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:6,markerHeight:6,orient:"auto"},defs);
+  E("path",{d:"M0 0 L10 5 L0 10 z",fill:"var(--ok)"},m1);
+  E("rect",{x:630,y:170,width:400,height:100,rx:12,fill:"#0f2418",stroke:"var(--ok)","stroke-width":2.5},adv);
+  T(830,208,"ADVISORY ONLY",{size:19,fill:"var(--ok)",parent:adv});
+  T(830,240,"a person confirms every change",{size:14,weight:"normal",fill:"var(--muted)",parent:adv});
+  fadeGroup([adv],700);
+
+  // blocked arrow to line control (forbidden)
+  const forb=E("g",{},g);
+  E("path",{d:"M414 300 L 620 360",stroke:"var(--alarm)","stroke-width":3,fill:"none","stroke-dasharray":"3 5"},forb);
+  E("circle",{cx:520,cy:333,r:22,fill:"#2c1418",stroke:"var(--alarm)","stroke-width":3},forb);
+  E("line",{x1:507,y1:320,x2:533,y2:346,stroke:"var(--alarm)","stroke-width":3},forb);
+  E("rect",{x:630,y:310,width:400,height:100,rx:12,fill:"#2c1418",stroke:"var(--alarm)","stroke-width":2.5},forb);
+  T(830,348,"LINE CONTROL",{size:19,fill:"var(--alarm)",parent:forb});
+  T(830,380,"never written to — enforced by a test",{size:14,weight:"normal",fill:"var(--muted)",parent:forb});
+  fadeGroup([forb],1400);
+}
+
+function scene3(){ // HOW IT ROLLS OUT (20-30s)
+  clearAll();
+  const g=E("g",{});
+  badge(g,"HOW IT ROLLS OUT",'var(--purple2)');
+  const phases=[["0","Shadow","exported logs, no writes"],
+                ["1","Supervisor","one line, one shift"],
+                ["2","Floor","all shifts, manager view"],
+                ["3","Retrofit","costed, at a shutdown"],
+                ["4","Second line","the commissioning curve"]];
+  phases.forEach((ph,i)=>{
+    const x=60+i*235;
+    const card=E("rect",{x,y:150,width:210,height:200,rx:10,fill:"#12151c",stroke:"#3a414f","stroke-width":2},g);
+    const bar=E("rect",{x,y:150,width:210,height:5,fill:"var(--purple)"},g);
+    const num=T(x+22,196,ph[0],{size:24,anchor:"start",fill:"var(--purple2)",parent:g});
+    const name=T(x+22,230,ph[1],{size:17,anchor:"start",fill:"var(--ink)",parent:g});
+    const desc=T(x+22,258,ph[2],{size:12.5,weight:"normal",anchor:"start",fill:"var(--muted)",parent:g});
+    fadeGroup([card,bar,num,name,desc],250+i*380);
+  });
+  const rule=E("g",{},g);
+  E("rect",{x:60,y:390,width:1160,height:60,rx:10,fill:"#2c1418",stroke:"var(--alarm)","stroke-width":2},rule);
+  T(640,427,"Never: closed-loop write to line control",{size:17,fill:"var(--alarm)",parent:rule});
+  fadeGroup([rule],2300);
+}
+
+function scene4(){ // CLOSE (30-38s)
+  clearAll();
+  const g=E("g",{});
+  const t=T(640,260,"One module connects it to a real line.",{size:34,fill:"var(--ink)",parent:g});
+  const s=T(640,306,"Nothing downstream changes.",{size:22,weight:"normal",fill:"var(--purple2)",parent:g});
+  fadeGroup([t],200);fadeGroup([s],650);
+}
+
+/* ================= driver ================= */
+const SCENES=[
+  {t:0,     vo:"It reads seven tables a plant already produces — scans, PLC state tags, buffer counts, tool results, andon, rework, calendar. No new hardware to switch it on.", build:scene1},
+  {t:10000, vo:"It never writes back to line control — enforced by a test that checks every module in the codebase, not a promise in a document.", build:scene2},
+  {t:20000, vo:"Shadow mode runs today, on exported logs. Then one supervisor, then the floor, then a costed retrofit — and only then, another line.", build:scene3},
+  {t:30000, vo:"One module connects it to a real line. Nothing downstream changes.", build:scene4},
+];
+const TOTAL=38000;
+let cues=[];SCENES.forEach(s=>cues.push({t:s.t,fn:s.build,done:false}));
+
+function splitVO(vo){
+  const parts=vo.split(/(?<=[.—,;])\s+/);const merged=[];
+  parts.forEach(p=>{const last=merged[merged.length-1],w=p.split(/\s+/).length;
+    if(last&&(last.split(/\s+/).length<7||w<6)&&last.split(/\s+/).length+w<=20)merged[merged.length-1]=last+" "+p;
+    else merged.push(p);});
+  return merged;
+}
+function buildChunks(){
+  const out=[];
+  SCENES.forEach((s,i)=>{
+    const end=(i+1<SCENES.length)?SCENES[i+1].t:TOTAL,span=end-s.t;
+    const parts=splitVO(s.vo),wc=parts.map(p=>p.split(/\s+/).length);
+    const tot=wc.reduce((a,b)=>a+b,0);let acc=0;
+    parts.forEach((p,k)=>{const a=s.t+(acc/tot)*span;acc+=wc[k];out.push({t:a,end:s.t+(acc/tot)*span,text:p});});
+  });
+  return out;
+}
+const CAPS=buildChunks();
+const capEl=document.getElementById("capText");
+let lastCap=null;
+function paintCaption(){
+  const c=CAPS.find(c=>elapsed>=c.t&&elapsed<c.end);
+  const txt=c?c.text:"";
+  if(txt!==lastCap){lastCap=txt;capEl.classList.remove("on");capEl.textContent=txt;
+    if(txt)requestAnimationFrame(()=>capEl.classList.add("on"));}
+}
+let playing=false,elapsed=0,t0=0,raf=null;
+const clock=document.getElementById("clock");
+const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
+function paint(){clock.textContent=fmt(elapsed)+" / "+fmt(TOTAL);paintCaption();}
+function frame(now){if(!playing)return;elapsed=now-t0;
+  cues.forEach(c=>{if(!c.done&&elapsed>=c.t){try{c.fn();}catch(e){console.error(e);}c.done=true;}});
+  paint();
+  if(elapsed<TOTAL)raf=requestAnimationFrame(frame);
+  else{playing=false;document.getElementById("play").textContent="▶ Play";}}
+function play(){if(playing)return;playing=true;t0=performance.now()-elapsed;
+  document.getElementById("play").textContent="❚❚ Pause";raf=requestAnimationFrame(frame);}
+function pause(){playing=false;cancelAnimationFrame(raf);document.getElementById("play").textContent="▶ Play";}
+function hardReset(){pause();elapsed=0;cues.forEach(c=>c.done=false);clearAll();paint();}
+document.getElementById("play").onclick=()=>playing?pause():play();
+document.getElementById("restart").onclick=()=>hardReset();
+addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();playing?pause():play();}
+  if(e.key==="r"||e.key==="R")hardReset();
+});
+if(new URLSearchParams(location.search).get("bare")==="1")document.getElementById("bar").classList.add("bare");
+if(new URLSearchParams(location.search).get("auto")==="1"){requestAnimationFrame(()=>requestAnimationFrame(play));}
+paint();
+</script>
