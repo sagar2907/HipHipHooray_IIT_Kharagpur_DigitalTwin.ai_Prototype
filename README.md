@@ -175,6 +175,51 @@ mount externally, so no PLC program changes and no re-validation.
 
 ---
 
+## Deploying this on a real line
+
+**The integration surface is seven tables a plant already produces.** Every
+module is written against that contract rather than against our simulator,
+which is why the same code runs on both.
+
+| What the twin reads | Where a plant already has it |
+|---|---|
+| Unit scans — VIN, station, timestamp | Barcode/RFID readers at station boundaries, already mandatory for traceability |
+| Station state transitions | PLC state tags, already historised for OEE reporting |
+| Buffer levels | Conveyor counters and occupancy sensors |
+| Tool readings — torque, angle, current | Nutrunner controllers over Open Protocol / OPC-UA |
+| Andon, rework, calendar | The andon system and the MES |
+
+**Nothing on that list requires new hardware.** Day-one deployment buys no
+sensors — the retrofit schedule is what the twin earns later, once it has
+measured which uninstrumented station is actually costing money.
+
+### The boundary is enforced, not promised
+
+`tests/test_readonly_boundary.py` walks the syntax tree of every module on
+every test run and asserts that:
+
+- only `store.py` and `sink.py` write anything at all, and only to our own store
+- **no module may import a network client** — not `socket`, not `opcua`, not
+  `pymodbus` — so the twin cannot reach a PLC even by mistake
+- every SQL write names a table the twin itself owns
+- every emitted frame is labelled advisory
+
+We verified the test can fail by planting a PLC write and a socket import and
+confirming it was caught.
+
+### What stands between this and a live line
+
+**One adapter.** The prototype reads its seven tables from files; there is no
+historian or MES connector. That is the honest gap, and it is deliberately the
+only one — connecting a real plant means writing one module that subscribes to
+that plant's historian and emits these tables. Nothing downstream changes.
+
+**Shadow mode already works today.** Point the replay driver at a plant's
+exported logs and the entire twin runs, with no live connection of any kind.
+That is Phase 0 of the roadmap, and it is the phase we can already execute.
+
+---
+
 ## What it does not do
 
 Stated here rather than discovered by a reader:
@@ -189,6 +234,8 @@ Stated here rather than discovered by a reader:
   tied** with an active-period method (p=0.45). We claim the first only.
 - **One mechanism was measured and killed** — an overtake-risk predictor that
   was correct 5.9% of the time against 70–100% stated confidence.
+- **There is no historian/MES adapter.** The seven input tables are read from
+  files. See *Deploying this on a real line* above.
 
 ---
 
@@ -196,7 +243,7 @@ Stated here rather than discovered by a reader:
 
 ```bash
 pip install -r requirements-dev.txt
-pytest tests/ -q                      # 10 passed, 2 skipped (skips need dataset/)
+pytest tests/ -q                      # skips need the regenerable dataset/
 ```
 
 Transfer across four line topologies, including a parallel-server pair that

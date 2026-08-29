@@ -396,6 +396,10 @@ def build():
     # ------------------------------------------------------------- 11 roadmap
     s = blank(prs)
     heading(s, "Shadow first. Never closed-loop.", "roadmap")
+    tb(s, 0.7, 1.66, 12, 0.3,
+       "Reads seven tables the plant already produces — scans, PLC state tags, buffer"
+       " counters, tool results, andon, rework, calendar. No new hardware on day one.",
+       11, False, MUTED)
     phases = [("0", "Shadow", "wk 1–4", "Subscribe to streams the plant\nalready discards. No writes."),
               ("1", "One supervisor", "wk 5–10", "One line, one shift, one screen.\nEvery alert confirmed by a person."),
               ("2", "Floor", "mo 3–6", "All shifts. Manager view opens\nfor planning."),
@@ -412,12 +416,14 @@ def build():
     rect(s, 0.7, 4.85, 11.93, 0.75, WHITE, LINE)
     rect(s, 0.7, 4.85, 0.055, 0.75, ALARM)
     tb(s, 1.0, 5.02, 11.3, 0.45,
-       "Never: closed-loop write to line control. The twin advises; a person decides.",
+       "Never: closed-loop write to line control — enforced by a test, not a promise.",
        15, True, INK)
-    tb(s, 0.7, 5.9, 12, 0.75,
+    tb(s, 0.7, 5.78, 12, 0.95,
        "What we deliberately did not do:  operator variation — excluded on ethical grounds,"
        " we measure the station, never\nthe person.  ·  equipment vintage — no data axis for it."
-       "  ·  a CONWIP lead-time figure — no source file, so it does not appear.",
+       "  ·  a CONWIP lead-time figure — no source file, so it does not appear.\n"
+       "Not yet built:  the historian adapter. Shadow mode runs today on exported logs;"
+       " one module connects it live.",
        12.5, False, MUTED, line=1.3)
 
     # --------------------------------------------------------------- 12 close

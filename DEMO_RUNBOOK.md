@@ -125,3 +125,17 @@ Judges probe the weakest claim. Say these before they have to ask:
   produced it."
 - **"What failed?"** — "Our overtake-risk predictor. 5.9% correct against
   70–100% stated confidence. We measured it, killed it, and it is in the deck."
+- **"How would this actually go into a real plant?"** ⭐ — "It reads seven
+  tables a plant already produces — boundary scans, PLC state tags, buffer
+  counters, nutrunner results over Open Protocol, andon, rework, calendar.
+  **Nothing on that list is new hardware.** Every module is written against
+  that contract, not against our simulator, so the same code runs on both.
+  **Shadow mode works today**: point it at a plant's exported logs and the
+  whole twin runs with no live connection. What we have *not* built is the
+  historian adapter — one module that subscribes to a plant's historian and
+  emits those seven tables. That is the single piece between this and Phase 0,
+  and nothing downstream changes when it lands."
+  Then volunteer the boundary: **"And it cannot write to line control — that is
+  enforced by a test, not a promise. Two modules may write, both to our own
+  store, and no module may import a network client. We proved the test works by
+  planting a PLC write and watching it fail."**

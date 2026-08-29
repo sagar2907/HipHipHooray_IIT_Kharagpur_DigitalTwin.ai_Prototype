@@ -25,7 +25,12 @@ td.n{text-align:right;font-family:Consolas,monospace;white-space:nowrap}
 code{font-family:Consolas,monospace;font-size:8.5pt;background:#eef2f5;padding:0 3px}
 ul,ol{margin:0 0 8px;padding-left:17px} li{margin-bottom:3px}
 .src{color:#6b7280;font-size:8pt;font-style:italic}
-h2{page-break-after:avoid} table{page-break-inside:avoid}
+h2{page-break-after:avoid}
+/* Tables may split across pages, but never mid-row, and the header repeats.
+   Holding a whole table together pushed the long ones wholly to the next
+   page and left a third of the preceding one blank. */
+table{page-break-inside:auto} tr{page-break-inside:avoid}
+thead{display:table-header-group}
 .box{page-break-inside:avoid} .foot{page-break-inside:avoid}
 .foot{margin-top:14px;padding-top:6px;border-top:1px solid #d8dee3;color:#6b7280;font-size:8pt}
 </style></head><body>
@@ -107,6 +112,41 @@ the ranked candidate and its margin; the evidence that produced it; a persistenc
 recommended action; and the expected cost of not acting. <b>An alert that cannot state its evidence
 is suppressed, not downgraded</b> — a quiet alert with no evidence is still noise, and noise is what
 erodes floor trust. In the recorded run, 7 alerts were suppressed by this rule.</div>
+
+<h3>2.5 What the twin needs from a plant, and what it must never touch</h3>
+
+<p>The integration surface is deliberately narrow: <b>seven tables a plant already produces.</b>
+Every module downstream is written against this contract rather than against our simulator, which
+is why the same code runs on our data and would run on a plant's.</p>
+
+<table>
+<tr><th>What the twin reads</th><th>Where a plant already has it</th></tr>
+<tr><td>Unit scans — VIN, station, timestamp</td><td>Barcode/RFID readers at station boundaries; already mandatory for traceability</td></tr>
+<tr><td>Station state transitions</td><td>PLC state tags, already historised for OEE reporting</td></tr>
+<tr><td>Buffer levels</td><td>Conveyor counters and occupancy sensors</td></tr>
+<tr><td>Tool readings — torque, angle, current</td><td>Nutrunner controllers over Open Protocol / OPC-UA</td></tr>
+<tr><td>Andon, rework, calendar</td><td>The andon system and the MES</td></tr>
+</table>
+
+<p><b>Nothing on that list requires new hardware.</b> The twin's day-one deployment buys no sensors;
+the retrofit schedule in §5 is what it earns later, once the twin has measured which dark station
+is actually costing money.</p>
+
+<div class="box"><b>The boundary is enforced, not promised.</b> Exactly two modules in the
+codebase may write anything, and both write only to the twin's own store. <b>No module may import
+a network client</b> — not <code>socket</code>, not <code>opcua</code>, not <code>pymodbus</code> —
+so the twin cannot reach a PLC even by mistake. This is checked by a test that walks the syntax
+tree of every module on every run, and we verified the test fails by planting a PLC write and
+confirming it was caught. The read-only claim is therefore a property of the build, not a promise
+in a document.</div>
+
+<div class="box warn"><b>What stands between this and a live line: one adapter.</b> We have not
+built a historian or MES connector — the prototype reads the seven tables from files. That is the
+honest gap, and it is deliberately the <i>only</i> one: because every module reads the contract and
+not the simulator, connecting a real plant means writing one module that subscribes to that plant's
+historian and emits these tables. Nothing downstream changes. <b>Shadow mode already works today</b>
+— point the replay driver at a plant's exported logs and the entire twin runs, with no live
+connection of any kind. That is Phase 0 of §7, and it is the phase we can already execute.</div>
 
 <h2>3 · Target users</h2>
 
@@ -265,7 +305,7 @@ a single averaged degradation.</p>
 <tr><td><b>Transfer may not hold</b></td><td>L2–L4 are 12 runs each</td>
 <td>Stated as directional. Regret held 1.21–1.43 across four topologies; the commissioning curve is reported, not asserted</td></tr>
 <tr><td><b>Touching production</b></td><td>Regulated, safety-certified control</td>
-<td>Read-only by construction and enforced by a test, not a promise</td></tr>
+<td>Read-only by construction and <b>enforced by a test that walks every module's syntax tree</b>: two modules may write, and only to our own store; no module may import a network client. Verified by planting a PLC write and confirming the test caught it</td></tr>
 <tr><td><b>Modelling people</b></td><td>Operator variation is a named cause and a real hazard</td>
 <td>Excluded by choice. We measure the station, never the person, and say so</td></tr>
 </table>
@@ -276,6 +316,9 @@ a single averaged degradation.</p>
 <li><b>Operator variation</b> — excluded on ethical grounds, as above.</li>
 <li><b>The CONWIP lead-time figure</b> — removed for want of a source file.</li>
 <li><b>Closed-loop control</b> — outside what any plant grants a prototype.</li>
+<li><b>A historian/MES adapter</b> — the prototype reads its seven input tables from files, not from
+a live plant connection. Deliberately the only gap between this and Phase 0 on a real line, and
+narrow by design: see §2.5.</li>
 </ul>
 <p>Every one of these is a decision we can defend, which is worth more than a claim we cannot.</p>
 
