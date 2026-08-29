@@ -1,0 +1,219 @@
+<!doctype html>
+<title>DigitalTwin.ai — The Virtual Plant</title>
+<style>
+  :root{
+    --bg:#0b0d12; --ink:#e9ebf0; --muted:#98a0b2; --line:#242833;
+    --purple:#b98cff; --purple2:#d6bcff; --ok:#4ade80; --alarm:#ff6f61;
+    --warn:#ffc247; --dark:#5a6577; --lock:#ff6f61;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg)}
+  #stage{width:1280px;height:720px;overflow:hidden;display:flex;flex-direction:column;
+         font-family:Arial,Helvetica,sans-serif;background:var(--bg)}
+  svg{display:block;width:1280px;height:540px;flex:0 0 auto}
+  #cap{flex:1;display:flex;align-items:center;justify-content:center;text-align:center;
+       padding:0 60px;border-top:1px solid var(--line);font:600 25px/1.35 Arial;color:#f2f4f8}
+  #cap span{opacity:0;transition:opacity .22s ease}
+  #cap span.on{opacity:1}
+  .fade{opacity:0;transition:opacity .5s ease}
+  .fade.on{opacity:1}
+  #bar{width:1280px;display:flex;gap:10px;align-items:center;padding:8px 12px;background:#05060a}
+  button{background:#6d28d9;color:#fff;border:0;padding:7px 14px;border-radius:5px;font:bold 12px Arial;cursor:pointer}
+  button.ghost{background:#242833}
+  #clock{font:bold 13px Consolas,monospace;color:#fff}
+  #bar.bare{display:none}
+</style>
+
+<div id="stage">
+  <svg id="cv" viewBox="0 0 1280 540"></svg>
+  <div id="cap"><span id="capText"></span></div>
+</div>
+<div id="bar">
+  <button id="play">▶ Play</button>
+  <button id="restart" class="ghost">⟲ Restart</button>
+  <span id="clock">0:00 / 0:48</span>
+  <span style="font:12px Arial;color:#7b8296">add ?bare=1 to hide this bar · ?auto=1 to autoplay</span>
+</div>
+
+<script>
+const NS="http://www.w3.org/2000/svg", cv=document.getElementById("cv");
+function E(t,a={},p=cv){const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);p.appendChild(n);return n;}
+function T(x,y,s,{size=22,weight="bold",fill="var(--ink)",anchor="middle",parent=cv}={}){
+  const t=E("text",{x,y,"text-anchor":anchor,"font-size":size,"font-weight":weight,fill,
+    "font-family":"Arial,Helvetica,sans-serif"},parent);t.textContent=s;return t;}
+let sceneIvs=[];
+function trackIv(iv){sceneIvs.push(iv);return iv;}
+function clearAll(){sceneIvs.forEach(iv=>clearInterval(iv));sceneIvs=[];while(cv.firstChild)cv.removeChild(cv.firstChild);}
+function fadeGroup(els,delay){els.forEach(el=>el.classList.add("fade"));setTimeout(()=>els.forEach(el=>el.classList.add("on")),delay);}
+function badge(g,txt,col){
+  const w=txt.length*11+56;
+  const r=E("rect",{x:56,y:34,width:w,height:38,rx:19,fill:"none",stroke:col,"stroke-width":3},g);
+  const t=T(56+w/2,58,txt,{size:18,fill:col,parent:g});
+  fadeGroup([r,t],60);
+}
+
+/* ---------------- scene 1: we built a plant (0-13s) ---------------- */
+function scene1(){
+  clearAll();
+  const g=E("g",{});
+  badge(g,"WE BUILT THE PLANT",'var(--purple2)');
+
+  const N=8, SX=70, SW=126, SGAP=16, SY=230, SH=84;
+  const stx=i=>SX+i*(SW+SGAP);
+  // stations appear one at a time - the line being constructed
+  for(let i=0;i<N;i++){
+    const x=stx(i);
+    const r=E("rect",{x,y:SY,width:SW,height:SH,rx:8,fill:"#12151c",stroke:"#3a414f","stroke-width":2.5},g);
+    const t=T(x+SW/2,SY+SH/2+7,"S"+String(i+1).padStart(2,"0"),{size:18,fill:"#7b8296",parent:g});
+    fadeGroup([r,t],150+i*130);
+    if(i<N-1){
+      const buf=E("rect",{x:x+SW+2,y:SY+SH/2-9,width:SGAP-4,height:18,rx:3,
+        fill:"#1a1f29",stroke:"#4a5262","stroke-width":1.5},g);
+      fadeGroup([buf],220+i*130);
+    }
+  }
+  // things the simulator models, listed as they "switch on"
+  const feats=["buffers","tool wear","breakdowns","breaks & lunch","rework loop","changeover","andon stops"];
+  feats.forEach((f,i)=>{
+    const x=110+ (i%4)*270, y= i<4 ? 390 : 440;
+    const dot=E("circle",{cx:x-14,cy:y-5,r:4,fill:"var(--ok)"},g);
+    const t=T(x,y,f,{size:16,weight:"normal",anchor:"start",fill:"var(--muted)",parent:g});
+    fadeGroup([dot,t],1300+i*230);
+  });
+}
+
+/* ------------- scene 2: observed vs hidden (13-27s) ------------- */
+function scene2(){
+  clearAll();
+  const g=E("g",{});
+  badge(g,"WHAT IT SHOWS vs WHAT IT HIDES",'var(--purple2)');
+
+  // OBSERVED column
+  const ox=90;
+  const obox=E("rect",{x:ox,y:130,width:500,height:340,rx:14,fill:"#12151c",stroke:"var(--ok)","stroke-width":2.5},g);
+  const ohead=T(ox+250,172,"OBSERVED — the twin may read this",{size:17,fill:"var(--ok)",parent:g});
+  fadeGroup([obox,ohead],200);
+  const obs=["unit scans  ·  VIN, station, time","station state  ·  working / blocked / down",
+             "buffer levels","tool readings  ·  torque, angle, current","manual checklist entries"];
+  obs.forEach((o,i)=>{
+    const t=T(ox+30,214+i*46,o,{size:15,weight:"normal",anchor:"start",fill:"var(--ink)",parent:g});
+    fadeGroup([t],400+i*180);
+  });
+
+  // HIDDEN column
+  const hx=690;
+  const hbox=E("rect",{x:hx,y:130,width:500,height:340,rx:14,fill:"#1a1216",stroke:"var(--alarm)","stroke-width":2.5},g);
+  const hhead=T(hx+250,172,"HIDDEN — the truth, sealed off",{size:17,fill:"var(--alarm)",parent:g});
+  fadeGroup([hbox,hhead],1300);
+  const hid=["exactly which fault we injected","the true minute it began",
+             "every micro-stop","which tools were really worn","what the dark stations really did"];
+  hid.forEach((o,i)=>{
+    const t=T(hx+30,214+i*46,o,{size:15,weight:"normal",anchor:"start",fill:"#c8b6ba",parent:g});
+    fadeGroup([t],1500+i*180);
+  });
+}
+
+/* ------------- scene 3: that is what makes it measurable (27-39s) ------------- */
+function scene3(){
+  clearAll();
+  const g=E("g",{});
+  badge(g,"WHY THAT MATTERS",'var(--ok)');
+
+  const cx=640;
+  const a=T(cx,180,"We know the right answer.",{size:30,fill:"var(--ink)",parent:g});
+  const b=T(cx,226,"The detector never does.",{size:30,fill:"var(--alarm)",parent:g});
+  fadeGroup([a],200); fadeGroup([b],900);
+
+  const c=T(cx,308,"So every number in this submission is scored, not claimed.",
+    {size:21,weight:"normal",fill:"var(--purple2)",parent:g});
+  fadeGroup([c],1800);
+
+  // three example scores
+  const ex=[["onset dated","to +2 min of truth"],["dark-station warnings","15.5% of all warnings"],
+            ["tool diagnosis","70.5% actionable"]];
+  ex.forEach((e,i)=>{
+    const x=150+i*340;
+    const card=E("rect",{x,y:360,width:300,height:96,rx:10,fill:"#12151c",stroke:"#3a414f","stroke-width":2},g);
+    const v=T(x+150,398,e[0],{size:16,fill:"var(--ink)",parent:g});
+    const l=T(x+150,428,e[1],{size:15,weight:"normal",fill:"var(--ok)",parent:g});
+    fadeGroup([card,v,l],2400+i*300);
+  });
+}
+
+/* ------------- scene 4: the scale we ran it at (39-48s) ------------- */
+function scene4(){
+  clearAll();
+  const g=E("g",{});
+  badge(g,"THE SCALE WE RAN IT AT",'var(--purple2)');
+  const stats=[["162","shifts simulated"],["4","line layouts"],["972","tools"],["903","shifts replayed"]];
+  stats.forEach((s,i)=>{
+    const x=90+i*285;
+    const card=E("rect",{x,y:180,width:250,height:150,rx:12,fill:"#12151c",stroke:"var(--purple)","stroke-width":2.5},g);
+    const v=T(x+125,258,s[0],{size:48,fill:"var(--purple2)",parent:g});
+    const l=T(x+125,296,s[1],{size:15,weight:"normal",fill:"var(--muted)",parent:g});
+    fadeGroup([card,v,l],200+i*280);
+  });
+  const foot=T(640,410,"Everything you see next is that twin, running.",
+    {size:22,weight:"normal",fill:"var(--ink)",parent:g});
+  fadeGroup([foot],1500);
+}
+
+/* ================= driver ================= */
+const SCENES=[
+  {t:0,     vo:"We could not put sensors on a real assembly line, so we built one in software — twenty stations, the buffers between them, the tools, the breaks, the rework, even the operator stops.", build:scene1},
+  {t:13000, vo:"It writes out only what a real plant would actually record. The true answer — which fault we injected and exactly when — is written to a separate place the detector is never allowed to open.", build:scene2},
+  {t:27000, vo:"That is the whole point. We know the right answer and the detector does not, so we can mark its work. Every number you are about to see was scored this way.", build:scene3},
+  {t:39000, vo:"A hundred and sixty-two simulated shifts, four different line layouts, nearly a thousand tools. Then we pointed the twin at it and watched.", build:scene4},
+];
+const TOTAL=48000;
+let cues=[];SCENES.forEach(s=>cues.push({t:s.t,fn:s.build,done:false}));
+
+function splitVO(vo){
+  const parts=vo.split(/(?<=[.—,;])\s+/);const merged=[];
+  parts.forEach(p=>{const last=merged[merged.length-1],w=p.split(/\s+/).length;
+    if(last&&(last.split(/\s+/).length<7||w<6)&&last.split(/\s+/).length+w<=20)merged[merged.length-1]=last+" "+p;
+    else merged.push(p);});
+  return merged;
+}
+function buildChunks(){
+  const out=[];
+  SCENES.forEach((s,i)=>{
+    const end=(i+1<SCENES.length)?SCENES[i+1].t:TOTAL,span=end-s.t;
+    const parts=splitVO(s.vo),wc=parts.map(p=>p.split(/\s+/).length);
+    const tot=wc.reduce((a,b)=>a+b,0);let acc=0;
+    parts.forEach((p,k)=>{const a=s.t+(acc/tot)*span;acc+=wc[k];out.push({t:a,end:s.t+(acc/tot)*span,text:p});});
+  });
+  return out;
+}
+const CAPS=buildChunks();
+const capEl=document.getElementById("capText");
+let lastCap=null;
+function paintCaption(){
+  const c=CAPS.find(c=>elapsed>=c.t&&elapsed<c.end);
+  const txt=c?c.text:"";
+  if(txt!==lastCap){lastCap=txt;capEl.classList.remove("on");capEl.textContent=txt;
+    if(txt)requestAnimationFrame(()=>capEl.classList.add("on"));}
+}
+let playing=false,elapsed=0,t0=0,raf=null;
+const clock=document.getElementById("clock");
+const fmt=ms=>{const s=Math.max(0,Math.floor(ms/1000));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");};
+function paint(){clock.textContent=fmt(elapsed)+" / "+fmt(TOTAL);paintCaption();}
+function frame(now){if(!playing)return;elapsed=now-t0;
+  cues.forEach(c=>{if(!c.done&&elapsed>=c.t){try{c.fn();}catch(e){console.error(e);}c.done=true;}});
+  paint();
+  if(elapsed<TOTAL)raf=requestAnimationFrame(frame);
+  else{playing=false;document.getElementById("play").textContent="▶ Play";}}
+function play(){if(playing)return;playing=true;t0=performance.now()-elapsed;
+  document.getElementById("play").textContent="❚❚ Pause";raf=requestAnimationFrame(frame);}
+function pause(){playing=false;cancelAnimationFrame(raf);document.getElementById("play").textContent="▶ Play";}
+function hardReset(){pause();elapsed=0;cues.forEach(c=>c.done=false);clearAll();paint();}
+document.getElementById("play").onclick=()=>playing?pause():play();
+document.getElementById("restart").onclick=()=>hardReset();
+addEventListener("keydown",e=>{
+  if(e.code==="Space"){e.preventDefault();playing?pause():play();}
+  if(e.key==="r"||e.key==="R")hardReset();
+});
+if(new URLSearchParams(location.search).get("bare")==="1")document.getElementById("bar").classList.add("bare");
+if(new URLSearchParams(location.search).get("auto")==="1"){requestAnimationFrame(()=>requestAnimationFrame(play));}
+paint();
+</script>

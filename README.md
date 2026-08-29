@@ -177,7 +177,7 @@ mount externally, so no PLC program changes and no re-validation.
 
 ## Deploying this on a real line
 
-**The integration surface is seven tables a plant already produces.** Every
+**The integration surface is five streams a plant already produces.** Every
 module is written against that contract rather than against our simulator,
 which is why the same code runs on both.
 
@@ -209,7 +209,7 @@ confirming it was caught.
 
 ### What stands between this and a live line
 
-**One adapter.** The prototype reads its seven tables from files; there is no
+**One adapter.** The prototype reads these streams from files; there is no
 historian or MES connector. That is the honest gap, and it is deliberately the
 only one — connecting a real plant means writing one module that subscribes to
 that plant's historian and emits these tables. Nothing downstream changes.
@@ -234,7 +234,7 @@ Stated here rather than discovered by a reader:
   tied** with an active-period method (p=0.45). We claim the first only.
 - **One mechanism was measured and killed** — an overtake-risk predictor that
   was correct 5.9% of the time against 70–100% stated confidence.
-- **There is no historian/MES adapter.** The seven input tables are read from
+- **There is no historian/MES adapter.** The input streams are read from
   files. See *Deploying this on a real line* above.
 
 ---

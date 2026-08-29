@@ -30,7 +30,7 @@
 <div id="bar">
   <button id="play">▶ Play</button>
   <button id="restart" class="ghost">⟲ Restart</button>
-  <span id="clock">0:00 / 0:38</span>
+  <span id="clock">0:00 / 0:52</span>
   <span style="font:12px Arial;color:#7b8296">add ?bare=1 to hide this bar for capture</span>
 </div>
 
@@ -62,16 +62,21 @@ function scene1(){ // WHAT IT NEEDS (0-10s)
   const hexT2=T(cx,cy+20,"TWIN",{size:22,fill:"var(--ink)",parent:g});
   fadeGroup([hex,hexT,hexT2],200);
 
-  const inputs=["UNIT SCANS","PLC STATE TAGS","BUFFER COUNTS","TOOL RESULTS","ANDON LOG","REWORK LOG","CALENDAR"];
-  const R=210;
+  const inputs=["UNIT SCANS","PLC STATE TAGS","BUFFER COUNTS","TOOL RESULTS","MANUAL CHECKS"];
+  const R=230;
   inputs.forEach((label,i)=>{
     const ang=(-90 + i*(360/inputs.length)) * Math.PI/180;
     const x=cx+R*Math.cos(ang), y=cy+R*Math.sin(ang)*0.62;
     const w=label.length*8+26;
     const box=E("rect",{x:x-w/2,y:y-20,width:w,height:40,rx:8,fill:"#12151c",stroke:"#3a414f","stroke-width":2},g);
     const txt=T(x,y+5,label,{size:13,weight:"normal",fill:"var(--muted)",parent:g});
-    const line=E("line",{x1:x+(cx>x?18:-18),y1:y,x2:cx+(cx>x?r+6:-r-6),y2:cy,stroke:"#3a414f","stroke-width":1.5,
-      "stroke-dasharray":"4 4"},g);
+    // Stop the connector on the circle's edge along the true centre-to-box
+    // direction. Ending it at a fixed horizontal offset drew the line straight
+    // through the circle for any box not level with the centre.
+    const dx=x-cx, dy=y-cy, len=Math.hypot(dx,dy)||1;
+    const ux=dx/len, uy=dy/len;
+    const line=E("line",{x1:x-ux*(w/2+6),y1:y-uy*26,x2:cx+ux*(r+6),y2:cy+uy*(r+6),
+      stroke:"#3a414f","stroke-width":1.5,"stroke-dasharray":"4 4"},g);
     fadeGroup([box,txt,line],450+i*160);
   });
   const foot=T(cx,500,"no new hardware to switch it on",{size:16,weight:"normal",fill:"var(--muted)",parent:g});
@@ -133,7 +138,33 @@ function scene3(){ // HOW IT ROLLS OUT (20-30s)
   fadeGroup([rule],2300);
 }
 
-function scene4(){ // CLOSE (30-38s)
+function scene4(){ // DOES IT WORK ON A DIFFERENT LINE? (30-44s)
+  clearAll();
+  const g=E("g",{});
+  badge(g,"DOES IT WORK ON A DIFFERENT LINE?",'var(--purple2)');
+  const rows=[["20 stations","1 merge","1.21"],["30 stations","2 merges","1.22"],
+              ["20 + parallel pair","breaks the series assumption","1.43"],["15 stations","1 merge","1.22"]];
+  const hx=[150,470,980];
+  const h1=T(hx[0],168,"LINE",{size:14,anchor:"start",fill:"var(--muted)",parent:g});
+  const h2=T(hx[1],168,"WHAT IS DIFFERENT",{size:14,anchor:"start",fill:"var(--muted)",parent:g});
+  const h3=T(hx[2],168,"CARS LOST PER CALL",{size:14,anchor:"start",fill:"var(--muted)",parent:g});
+  fadeGroup([h1,h2,h3],150);
+  rows.forEach((r,i)=>{
+    const y=214+i*52;
+    const a=T(hx[0],y,r[0],{size:17,anchor:"start",fill:"var(--ink)",parent:g});
+    const b=T(hx[1],y,r[1],{size:15,weight:"normal",anchor:"start",fill:"var(--muted)",parent:g});
+    const c=T(hx[2],y,r[2],{size:19,anchor:"start",fill:"var(--ok)",parent:g});
+    const ln=E("line",{x1:hx[0],y1:y+13,x2:1190,y2:y+13,stroke:"#242833","stroke-width":1},g);
+    fadeGroup([a,b,c,ln],350+i*300);
+  });
+  const box=E("g",{},g);
+  E("rect",{x:150,y:430,width:1040,height:62,rx:10,fill:"#0f2418",stroke:"var(--ok)","stroke-width":2},box);
+  T(670,468,"The number that matters barely moves. We tested it, rather than assuming.",
+    {size:17,fill:"var(--ok)",parent:box});
+  fadeGroup([box],1800);
+}
+
+function scene5(){ // CLOSE (44-52s)
   clearAll();
   const g=E("g",{});
   const t=T(640,260,"One module connects it to a real line.",{size:34,fill:"var(--ink)",parent:g});
@@ -143,12 +174,13 @@ function scene4(){ // CLOSE (30-38s)
 
 /* ================= driver ================= */
 const SCENES=[
-  {t:0,     vo:"It reads seven tables a plant already produces — scans, PLC state tags, buffer counts, tool results, andon, rework, calendar. No new hardware to switch it on.", build:scene1},
-  {t:10000, vo:"It never writes back to line control — enforced by a test that checks every module in the codebase, not a promise in a document.", build:scene2},
-  {t:20000, vo:"Shadow mode runs today, on exported logs. Then one supervisor, then the floor, then a costed retrofit — and only then, another line.", build:scene3},
-  {t:30000, vo:"One module connects it to a real line. Nothing downstream changes.", build:scene4},
+  {t:0,     vo:"It runs on five things a plant already records — barcode scans, machine status, buffer counts, tool readings, and the manual checklist. Nothing here is new hardware.", build:scene1},
+  {t:10000, vo:"It never writes back to the machines that run the line. That is not a promise in a document — it is a test that checks every file in the codebase.", build:scene2},
+  {t:20000, vo:"It starts in shadow mode on yesterday's data, then one supervisor, then the whole floor, then a costed sensor upgrade — and only then, a second line.", build:scene3},
+  {t:30000, vo:"And we checked it moves. On four different line shapes — more stations, more merge points, even two machines working in parallel — the cost of a wrong call stayed almost flat.", build:scene4},
+  {t:44000, vo:"One module connects it to a real line. Nothing downstream changes.", build:scene5},
 ];
-const TOTAL=38000;
+const TOTAL=52000;
 let cues=[];SCENES.forEach(s=>cues.push({t:s.t,fn:s.build,done:false}));
 
 function splitVO(vo){

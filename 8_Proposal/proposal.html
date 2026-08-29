@@ -115,18 +115,21 @@ erodes floor trust. In the recorded run, 7 alerts were suppressed by this rule.<
 
 <h3>2.5 What the twin needs from a plant, and what it must never touch</h3>
 
-<p>The integration surface is deliberately narrow: <b>seven tables a plant already produces.</b>
+<p>The integration surface is deliberately narrow: <b>five streams a plant already produces.</b>
 Every module downstream is written against this contract rather than against our simulator, which
 is why the same code runs on our data and would run on a plant's.</p>
 
 <table>
-<tr><th>What the twin reads</th><th>Where a plant already has it</th></tr>
+<tr><th>What the live twin reads</th><th>Where a plant already has it</th></tr>
 <tr><td>Unit scans — VIN, station, timestamp</td><td>Barcode/RFID readers at station boundaries; already mandatory for traceability</td></tr>
 <tr><td>Station state transitions</td><td>PLC state tags, already historised for OEE reporting</td></tr>
 <tr><td>Buffer levels</td><td>Conveyor counters and occupancy sensors</td></tr>
 <tr><td>Tool readings — torque, angle, current</td><td>Nutrunner controllers over Open Protocol / OPC-UA</td></tr>
-<tr><td>Andon, rework, calendar</td><td>The andon system and the MES</td></tr>
+<tr><td>Manual checks — result and entry latency</td><td>The paper or tablet checklist at an uninstrumented station</td></tr>
 </table>
+
+<p class="src">Our simulator also emits andon, rework and calendar logs, and those ship with the
+sample data, but the live loop does not consume them today — so they are not counted above.</p>
 
 <p><b>Nothing on that list requires new hardware.</b> The twin's day-one deployment buys no sensors;
 the retrofit schedule in §5 is what it earns later, once the twin has measured which dark station
@@ -141,7 +144,7 @@ confirming it was caught. The read-only claim is therefore a property of the bui
 in a document.</div>
 
 <div class="box warn"><b>What stands between this and a live line: one adapter.</b> We have not
-built a historian or MES connector — the prototype reads the seven tables from files. That is the
+built a historian or MES connector — the prototype reads these streams from files. That is the
 honest gap, and it is deliberately the <i>only</i> one: because every module reads the contract and
 not the simulator, connecting a real plant means writing one module that subscribes to that plant's
 historian and emits these tables. Nothing downstream changes. <b>Shadow mode already works today</b>
@@ -316,7 +319,7 @@ a single averaged degradation.</p>
 <li><b>Operator variation</b> — excluded on ethical grounds, as above.</li>
 <li><b>The CONWIP lead-time figure</b> — removed for want of a source file.</li>
 <li><b>Closed-loop control</b> — outside what any plant grants a prototype.</li>
-<li><b>A historian/MES adapter</b> — the prototype reads its seven input tables from files, not from
+<li><b>A historian/MES adapter</b> — the prototype reads its input streams from files, not from
 a live plant connection. Deliberately the only gap between this and Phase 0 on a real line, and
 narrow by design: see §2.5.</li>
 </ul>
