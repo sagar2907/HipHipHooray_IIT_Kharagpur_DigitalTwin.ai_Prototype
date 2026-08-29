@@ -30,3 +30,6 @@ nohup.out
 /results/twin.db
 /results/twin.db-wal
 /results/twin.db-shm
+
+# raw .webm from scripts/record_demo.py — the converted .mp4 is what's committed
+/10_Demo_Video/_raw/
