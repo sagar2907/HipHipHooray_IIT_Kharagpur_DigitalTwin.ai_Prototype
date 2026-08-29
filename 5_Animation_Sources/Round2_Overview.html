@@ -18,6 +18,10 @@
   .fade{opacity:0;transition:opacity .5s ease}
   .fade.on{opacity:1}
   .noanim *{transition:none!important}
+  /* Station rects change fill/stroke every 2.2s (the constraint moving) -
+     without this every station hard-cuts colour in a single frame, which
+     reads as a flicker rather than the line "moving". */
+  .st-rect{transition:fill .45s ease,stroke .45s ease}
   #bar{width:1280px;display:flex;gap:10px;align-items:center;padding:8px 12px;background:#05060a}
   button{background:#6d28d9;color:#fff;border:0;padding:7px 14px;border-radius:5px;font:bold 12px Arial;cursor:pointer}
   button.ghost{background:#242833}
@@ -61,7 +65,8 @@ function buildLine(g){
   E("path",{d:"M0 0 L10 5 L0 10 z",fill:"#4a5262"},m);
   for(let i=0;i<N;i++){
     const x=stx(i);
-    const rect=E("rect",{x,y:SY,width:SW,height:SH,rx:8,fill:"#12151c",stroke:"#2b313d","stroke-width":3},g);
+    const rect=E("rect",{x,y:SY,width:SW,height:SH,rx:8,fill:"#12151c",stroke:"#2b313d","stroke-width":3,
+      "class":"st-rect"},g);
     const label=T(x+SW/2,SY+SH/2+7,"S"+String(i+1).padStart(2,"0"),{size:20,fill:"#7b8296",parent:g});
     if(i<N-1)E("path",{d:`M${x+SW+3} ${SY+SH/2} L${x+SW+SGAP-4} ${SY+SH/2}`,stroke:"#3a414f",
       "stroke-width":3,fill:"none","marker-end":"url(#ah2)"},g);
