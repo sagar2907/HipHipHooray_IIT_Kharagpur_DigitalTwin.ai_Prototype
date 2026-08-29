@@ -6,112 +6,143 @@
 <style>
 /* ISA-101: grey base, colour ONLY for deviation. A well-designed plant HMI is
    visually quiet during normal operation. If the screen is colourful, either
-   something is wrong or the designer has never stood on a plant floor. */
+   something is wrong or the designer has never stood on a plant floor.
+   ─────────────────────────────────────────────────────────────────────────
+   QUIET IN HUE, NEVER IN CONTRAST.
+   The first version of this palette confused "muted" with "low-contrast" and
+   FAILED WCAG AA on 5 of 9 pairings - muted text at 3.33:1, table borders at
+   1.65:1 against a 3.0 requirement, much of it set at 10px. That is backwards:
+   a plant HMI is read at distance, in poor light, by someone in safety
+   glasses, so legibility is the entire point of the standard.
+   Every pairing below is measured and passes AA. Restraint lives in the HUE -
+   the greys stay grey and colour still appears only on deviation. */
 :root{
-  --bg:#b8bcc0; --panel:#c9cdd1; --panel2:#d4d8db; --ink:#1b1e21;
-  --muted:#5a6067; --line:#9aa0a6;
-  --warn:#c8a415;      /* yellow  - warning        */
-  --alarm:#b3261e;     /* red     - alarm          */
-  --act:#1c5d99;       /* blue    - action needed  */
-  --ok:#3f6f3f;
+  --bg:#C4CACE;        /* page ground - light enough for borders to read     */
+  --panel:#F2F4F5;     /* primary surface - ink hits 16.35:1                 */
+  --panel2:#E2E6E9;    /* secondary surface - muted hits 6.76:1              */
+  --ink:#12171B;
+  --muted:#454E55;     /* 7.69:1 on panel, 5.13:1 on ground (was 3.33:1)     */
+  --line:#657078;      /* 4.60:1 on panel, 3.06:1 on ground (was 1.65:1)     */
+  --warn:#7E6300;      /* amber  - warning.  White text: 5.72:1              */
+  --alarm:#9E1F17;     /* red    - alarm.    White text: 7.89:1              */
+  --act:#14507F;       /* blue   - action.   White text: 8.46:1              */
+  --ok:#215C3C;        /* green  - confirmed. 7.15:1 on panel                */
+  --focus:#14507F;
 }
 *{box-sizing:border-box}
+/* 13px floor, up from 10-11px on the smallest labels. Data uses tabular
+   figures so columns of numbers line up and scan as columns. */
 body{margin:0;background:var(--bg);color:var(--ink);
-     font:13px/1.45 "Segoe UI",Arial,sans-serif}
+     font:14px/1.5 "Segoe UI",Arial,sans-serif;
+     font-variant-numeric:tabular-nums}
+/* nothing had a visible focus ring before; a plant terminal is often keyed */
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 .wrap{max-width:1180px;margin:0 auto;padding:10px}
 
 header{display:flex;align-items:baseline;gap:16px;padding:8px 12px;
        background:var(--panel);border:1px solid var(--line)}
 header h1{font-size:14px;margin:0;letter-spacing:.06em;font-weight:700}
-header .sub{color:var(--muted);font-size:11px}
+header .sub{color:var(--muted);font-size:12.5px}
 #clock{margin-left:auto;font:700 20px/1 Consolas,monospace}
-#status{font-size:11px;color:var(--muted)}
+#status{font-size:12.5px;color:var(--muted)}
 
-.bar{height:3px;background:#9aa0a6;margin:0 0 10px}
-.bar>i{display:block;height:100%;background:#5a6067;width:0;transition:width .3s linear}
+.bar{height:4px;background:var(--line);margin:0 0 10px}
+.bar>i{display:block;height:100%;background:var(--muted);width:0;transition:width .3s linear}
 
 .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:10px}
 @media(max-width:900px){.grid{grid-template-columns:1fr}}
-.card{background:var(--panel);border:1px solid var(--line);padding:10px 12px;margin-bottom:10px}
-.card h2{font-size:11px;letter-spacing:.1em;color:var(--muted);
+.card{background:var(--panel);border:1px solid var(--line);padding:12px 12px;margin-bottom:10px}
+.card h2{font-size:12.5px;letter-spacing:.1em;color:var(--muted);
          margin:0 0 8px;font-weight:700;text-transform:uppercase}
 
 /* the line */
-#line{display:flex;flex-wrap:wrap;gap:3px}
-.st{width:38px;height:30px;background:var(--panel2);border:1px solid var(--line);
+/* The line must never wrap. It is one physical line, and drawing it on two
+   rows breaks the only spatial metaphor the screen has - a supervisor reads
+   left-to-right as flow direction. Stations compress instead. */
+#line{display:flex;flex-wrap:nowrap;gap:3px;width:100%}
+.st{flex:1 1 0;min-width:0;height:34px;background:var(--panel2);
+    border:1px solid var(--line);
     display:flex;align-items:center;justify-content:center;
-    font:600 10px Consolas,monospace;color:var(--muted)}
+    font:600 12px Consolas,monospace;color:var(--muted)}
 .st.constraint{background:var(--alarm);color:#fff;border-color:#7d1b15;font-weight:700}
-.st.forming{background:var(--warn);color:#241f00;border-color:#8d7410}
-.st.dark{background:repeating-linear-gradient(45deg,#b0b4b8,#b0b4b8 4px,#a5a9ad 4px,#a5a9ad 8px);
-         color:#6b7076}
+.st.forming{background:var(--warn);color:#fff;border-color:#8d7410}
+.st.dark{background:repeating-linear-gradient(45deg,#C9CFD3,#C9CFD3 4px,#B3BBC1 4px,#B3BBC1 8px);
+         color:#3C454C}
 
 table{width:100%;border-collapse:collapse;font:12px Consolas,monospace}
-th{text-align:right;font:600 10px "Segoe UI",Arial;color:var(--muted);
+th{text-align:right;font:600 12px "Segoe UI",Arial;color:var(--muted);
    text-transform:uppercase;letter-spacing:.06em;padding:3px 6px;
    border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
-td{padding:3px 6px;border-bottom:1px solid #b4b9bd}
-tr.top td{background:#c0c4c8;font-weight:700}
+td{padding:3px 6px;border-bottom:1px solid var(--line)}
+tr.top td{background:var(--panel2);font-weight:700}
 tr.top td:first-child{box-shadow:inset 3px 0 var(--alarm)}
 
 .kv{display:flex;justify-content:space-between;padding:2px 0;
-    border-bottom:1px dotted #a8adb2}
+    border-bottom:1px dotted var(--line)}
 .kv b{font:700 12px Consolas,monospace}
 .big{font:700 26px/1.1 Consolas,monospace}
 .muted{color:var(--muted)}
 .tag{display:inline-block;padding:1px 6px;border:1px solid var(--line);
-     background:var(--panel2);font:600 10px Consolas,monospace;color:var(--muted)}
-.tag.warn{background:var(--warn);color:#241f00;border-color:#8d7410}
+     background:var(--panel2);font:600 12px Consolas,monospace;color:var(--muted)}
+.tag.warn{background:var(--warn);color:#fff;border-color:#8d7410}
 .tag.act{background:var(--act);color:#fff;border-color:#134372}
 
 #presc{border-left:3px solid var(--act);padding-left:10px}
 #presc .action{font-size:14px;font-weight:700}
-#presc .because{color:var(--muted);font-size:11.5px;margin-top:2px}
+#presc .because{color:var(--muted);font-size:13px;margin-top:2px}
 .advisory{margin-top:8px;padding:5px 8px;background:var(--panel2);
-          border:1px dashed var(--line);font-size:11px;color:var(--muted)}
+          border:1px dashed var(--line);font-size:12.5px;color:var(--muted)}
 
 .alert{display:flex;gap:8px;align-items:center;padding:4px 0;
-       border-bottom:1px solid #b4b9bd;font-size:11.5px}
-.alert .st-id{font:700 11px Consolas,monospace;min-width:34px}
-.alert button{font:600 10px "Segoe UI";padding:2px 7px;cursor:pointer;
+       border-bottom:1px solid var(--line);font-size:13px}
+.alert .st-id{font:700 12.5px Consolas,monospace;min-width:34px}
+.alert button{font:600 12px "Segoe UI";padding:2px 7px;cursor:pointer;
               border:1px solid var(--line);background:var(--panel2);color:var(--ink)}
-.alert button:hover{background:#dfe3e6}
-.alert .done{font:600 10px Consolas,monospace;color:var(--ok)}
+.alert button:hover{background:#fff}
+.alert .done{font:600 12px Consolas,monospace;color:var(--ok)}
 .alert .done.over{color:var(--alarm)}
 .alertc{border-left:2px solid var(--line);padding-left:6px;margin-bottom:6px}
-.contract{font-size:10.5px;color:var(--muted);padding:3px 0 4px 2px}
+.contract{font-size:12px;color:var(--muted);padding:3px 0 4px 2px}
 .contract div{padding:1px 0}
-.contract b{color:#3d4348;font-weight:700}
-.contract code{background:var(--panel2);padding:0 3px;font-size:10px}
-footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
+.contract b{color:var(--ink);font-weight:700}
+.contract code{background:var(--panel2);padding:0 3px;font-size:12px}
+footer{margin-top:12px;color:var(--muted);font-size:12px;text-align:center}
 
 /* tabs */
 #tabs{display:flex;gap:0;margin-bottom:10px}
-.tab{font:600 11px "Segoe UI";padding:6px 14px;cursor:pointer;
+.tab{font:600 12.5px "Segoe UI";padding:6px 14px;cursor:pointer;
      border:1px solid var(--line);border-bottom:none;background:var(--panel2);
      color:var(--muted)}
 .tab.on{background:var(--panel);color:var(--ink);box-shadow:inset 0 2px var(--act)}
 
 /* manager */
 .wk{margin-bottom:12px}
-.wk h3{font:700 11px Consolas,monospace;margin:0 0 4px}
-.occ{display:flex;align-items:center;gap:6px;margin:2px 0;font:11px Consolas,monospace}
+.wk h3{font:700 12.5px Consolas,monospace;margin:0 0 4px}
+.occ{display:flex;align-items:center;gap:6px;margin:2px 0;font:12.5px Consolas,monospace}
 .occ .id{min-width:34px;font-weight:700}
 .occ .track{flex:1;height:13px;background:var(--panel2);border:1px solid var(--line)}
-.occ .track>i{display:block;height:100%;background:#6d7378}
+.occ .track>i{display:block;height:100%;background:var(--muted)}
 .occ.lead .track>i{background:var(--alarm)}
 .occ .pct{min-width:46px;text-align:right}
 
 /* leadership — colour IS allowed here: it is a business dashboard,
    not a plant HMI. ISA-101 governs the supervisor view only. */
-.card.led{background:#1f2a33;border-color:#16202a;color:#e8edf1}
+/* Colour IS allowed here - a business dashboard is not a plant HMI. But the
+   ground is dark, so the signal colours are re-declared against it: the light
+   theme's dark amber would sit at ~1.6:1 on this panel. */
+.card.led{background:#1f2a33;border-color:#16202a;color:#e8edf1;
+          --warn:#E3B341;   /* 8.1:1 on #1f2a33 */
+          --alarm:#F08C84;  /* 7.4:1 */
+          --ok:#7FD4A8}     /* 9.6:1 */
 .card.led h2{color:#9fb3c4}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
 .kpi{background:#27343f;border:1px solid #16202a;padding:8px 10px}
 .kpi .n{font:700 24px/1.1 Consolas,monospace;color:#7fd4a8}
-.kpi .l{font-size:10.5px;color:#9fb3c4;margin-top:2px}
-.gap{color:#c8a415}
+.kpi .l{font-size:12px;color:#9fb3c4;margin-top:2px}
+.gap{color:var(--warn)}
 .pass{color:var(--ok);font-weight:700}
 .fail{color:var(--alarm);font-weight:700}
 </style>
@@ -141,7 +172,7 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
         <span class="tag" style="background:var(--alarm);color:#fff">constraint</span>
         <span class="tag warn">forming</span>
         <span class="tag">normal</span>
-        <span class="tag" style="background:repeating-linear-gradient(45deg,#b0b4b8,#b0b4b8 4px,#a5a9ad 4px,#a5a9ad 8px)">dark — no sensors</span>
+        <span class="tag" style="background:repeating-linear-gradient(45deg,#C9CFD3,#C9CFD3 4px,#B3BBC1 4px,#B3BBC1 8px)">dark — no sensors</span>
         &nbsp;· grey is normal by design (ISA-101)
       </div>
     </div>
@@ -185,14 +216,14 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
 
     <div class="card">
       <h2>Alert ledger — does the floor trust it?</h2>
-      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px">
         <span class="big" id="prec">—</span>
         <span class="muted" id="precsub">no calls scored yet</span>
       </div>
-      <div class="muted" id="calnote" style="font-size:11px;margin-bottom:6px">
+      <div class="muted" id="calnote" style="font-size:12.5px;margin-bottom:6px">
         confidence is an ordering score — no calibration loaded
       </div>
-      <div class="muted" style="font-size:11px;margin-bottom:6px">
+      <div class="muted" style="font-size:12.5px;margin-bottom:6px">
         <b id="supp">0</b> alerts <b>suppressed</b> for want of evidence —
         the contract suppresses rather than downgrades
       </div>
@@ -201,7 +232,7 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
 
     <div class="card">
       <h2>Tool health &amp; genealogy containment</h2>
-      <p class="muted" style="margin:0 0 6px;font-size:11px">
+      <p class="muted" style="margin:0 0 6px;font-size:12.5px">
         A defect found late has already been built into every car since it
         started. Onset is read backwards off the CUSUM accumulator, then the
         VIN thread says exactly which vehicles carry it — and where they are.
@@ -220,7 +251,7 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
 <div id="v-mgr" style="display:none">
   <div class="card">
     <h2>Who holds the line back — not an average</h2>
-    <p class="muted" style="margin:0 0 8px;font-size:11.5px">
+    <p class="muted" style="margin:0 0 8px;font-size:13px">
       The constraint moves ~20× per shift. A mean cycle time across a shift
       describes no moment of that shift and hides the only actionable fact:
       <b>which</b> stations hold the line and for <b>how long</b>. This is a
@@ -246,7 +277,7 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
   </div>
   <div class="card">
     <h2>What is measured, and where it comes from</h2>
-    <p class="muted" style="margin:0 0 8px;font-size:11.5px">
+    <p class="muted" style="margin:0 0 8px;font-size:13px">
       Every figure names the file that produced it. Anything we cannot source
       is shown as a gap rather than filled in — that rule is why the numbers
       below survive questioning.
@@ -258,7 +289,7 @@ footer{margin-top:10px;color:var(--muted);font-size:10.5px;text-align:center}
   </div>
   <div class="card">
     <h2>One twin, three views — reconciliation test</h2>
-    <p class="muted" style="margin:0 0 8px;font-size:11.5px">
+    <p class="muted" style="margin:0 0 8px;font-size:13px">
       We prove the three views are the same model at different resolutions
       rather than asserting it. Each level is totalled independently and
       compared.
@@ -417,12 +448,12 @@ function renderRollup(){
     if(e.value===null) return `<tr>
       <td>${e.label}</td>
       <td class="gap">not measured</td><td>—</td>
-      <td class="muted" style="font-size:10.5px">${e.reason}</td></tr>`;
+      <td class="muted" style="font-size:12px">${e.reason}</td></tr>`;
     return `<tr><td>${e.label}</td>
       <td><b>${e.value}${e.unit==='%'?'%':''}</b>
         ${e.unit && e.unit!=='%'?`<span class="muted"> ${e.unit}</span>`:''}</td>
       <td>${e.n}</td>
-      <td class="muted" style="font-size:10.5px">${e.source}</td></tr>`;
+      <td class="muted" style="font-size:12px">${e.source}</td></tr>`;
   }).join('');
 
   const R = d.reconciliation;
@@ -472,21 +503,21 @@ function renderGeno(){
           <b style="font:700 12px Consolas,monospace">${t.station}</b>
           <span class="tag ${c.tag==='alarm'?'':c.tag}"
             ${c.tag==='alarm'?'style="background:var(--alarm);color:#fff"':''}>${c.label}</span>
-          <span class="muted" style="font-size:10.5px">CUSUM ${t.cusum}</span>
+          <span class="muted" style="font-size:12px">CUSUM ${t.cusum}</span>
         </div>
         <div style="font-weight:700;margin-top:3px">${t.action}</div>
-        <div class="muted" style="font-size:11px">${t.why}</div>
-        <div class="muted" style="font-size:10.5px;margin-top:3px">${chans}</div>
-        ${ct?`<div style="margin-top:5px;font-size:11px">
+        <div class="muted" style="font-size:12.5px">${t.why}</div>
+        <div class="muted" style="font-size:12px;margin-top:3px">${chans}</div>
+        ${ct?`<div style="margin-top:5px;font-size:12.5px">
           <b>${ct.total} vehicles</b> through since onset
-          ${ct.bands.map(b=>`<div class="kv" style="font-size:11px">
+          ${ct.bands.map(b=>`<div class="kv" style="font-size:12.5px">
             <span>${b.band}</span><b>${b.n}</b></div>`).join('')}
         </div>`:''}
         ${sc?`<div style="margin-top:5px;padding:4px 6px;background:var(--panel2);
-              border-left:3px solid var(--act);font-size:11px">
+              border-left:3px solid var(--act);font-size:12.5px">
           <b>${sc.decision}</b>
-          <div class="muted" style="font-size:10.5px">${sc.why}</div>
-          <div class="muted" style="font-size:10px;margin-top:2px">${sc.note}</div>
+          <div class="muted" style="font-size:12px">${sc.why}</div>
+          <div class="muted" style="font-size:12px;margin-top:2px">${sc.note}</div>
         </div>`:''}
       </div>`;
     }).join('');
