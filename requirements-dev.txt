@@ -1,0 +1,6 @@
+# Development extras. Not needed to run the prototype.
+-r requirements.txt
+
+pytest>=8.0             # tested on 9.1.1 — `pytest tests/ -q`
+python-pptx>=1.0        # scripts/build_deck.py only
+matplotlib>=3.8         # scripts/detect_tool_fault.py (Round 1 chart) only
