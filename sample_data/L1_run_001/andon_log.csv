@@ -1,0 +1,8 @@
+station_id,reason,t_s,dur_s
+S10,part_misfeed,1282,125
+S19,safety_check,4200,191
+S17,quality_check,4462,351
+S18,part_misfeed,13687,157
+S16,safety_check,22739,205
+S17,safety_check,23047,147
+S14,quality_check,25607,301

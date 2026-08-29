@@ -10,8 +10,18 @@ when each event actually becomes visible.
 
 ```bash
 cd HipHipHooray_IIT_Kharagpur_DigitalTwin.ai_Prototype
-python web/server.py --run "../digitaltwin.ai/dataset/v5/flow/runs/L1_run_001" --speed 120 --shifts 0 --port 8080
+pip install fastapi uvicorn pandas numpy
+python web/server.py --speed 120 --shifts 0
 ```
+
+**That is the whole setup.** A sample shift ships in `sample_data/`, so this
+works from a clean clone with no arguments and no 765 MB dataset download.
+(Only the *observed* logs are shipped — no `hidden/` truth files, because a
+detector that can read ground truth is not a detector.)
+
+To run against the full corpus instead, regenerate it
+(`python scripts/build_v5.py`, ~3 min) and pass `--run <path>` and
+`--shifts 0` to cycle all 120 runs.
 
 Then open **http://127.0.0.1:8080**
 

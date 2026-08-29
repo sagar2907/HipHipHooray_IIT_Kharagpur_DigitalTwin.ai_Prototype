@@ -274,9 +274,13 @@ def alerts():
 
 def main():
     ap = argparse.ArgumentParser()
+    # Default to the sample run SHIPPED IN THIS REPO, so `python web/server.py`
+    # works from a clean clone with no arguments and no 765 MB dataset. The
+    # previous default pointed at a sibling checkout on one particular machine,
+    # which meant a judge cloning this could not run the demo at all - the
+    # dataset is gitignored and would never have been there.
     ap.add_argument("--run", default=os.path.join(
-        HERE, "..", "..", "digitaltwin.ai", "dataset", "v5", "flow",
-        "runs", "L1_run_001"))
+        HERE, "..", "sample_data", "L1_run_001"))
     ap.add_argument("--speed", type=float, default=60.0,
                     help="replay speed-up; 60 = an 8 h shift in 8 min")
     ap.add_argument("--step", type=int, default=300,
