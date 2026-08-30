@@ -275,8 +275,7 @@ in roughly half of all blocks.
 | `tests/` | Test suite |
 | `results/` | Measured outputs every claim above is sourced from |
 | `docs/dataset/` | Dataset documentation |
-| `8_Proposal/` | Business proposal |
-| `9_Deck/` | Pitch deck |
+| `8_Proposal/` | Detailed Business Proposal — PDF and PPT, same content, both formats |
 | `DEMO_RUNBOOK.md` | Measured beat timeline for the demonstration video |
 | `PROGRESS.md` | Full engineering log — every decision, bug and correction |
 | `1_`–`7_` | Round 1 submission and design documents |

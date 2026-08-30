@@ -78,14 +78,40 @@ after the third false alarm.</p>
 
 <h2>2 · Solution design</h2>
 
-<h3>2.1 A twin, not a shadow</h3>
+<h3>2.1 The virtual plant: why every number here is scored, not asserted</h3>
+<p>No student team gets access to a real assembly line's sensors, so we built one: a
+software plant simulating a mixed-model line with buffers, tool wear, breakdowns, the
+rework loop, shift breaks, a mid-shift changeover sweep and operator andon stops — the
+elements a practitioner notices missing from a toy model, not just the happy path.</p>
+<p>The simulator writes two things that never touch each other. The <b>observed</b> logs
+are exactly what a real plant's sensors and paperwork would produce — the five streams
+in §2.6. A separate <b>hidden</b> ground truth records the true answer: which fault was
+injected, the true onset minute, every micro-stop, which tools are actually worn.
+<b>The detector is never allowed to open the hidden files — enforced by a test that
+checks no observed file carries a truth column</b>, the same test-not-promise discipline
+as the read-only boundary in §2.6.</p>
+<p>That separation is the whole point: it turns "does this work" from an opinion into a
+score. Every figure in this document — 70.5% actionable, 15.5% dark-station warnings,
+ECE 0.025 — is the detector's output checked against an answer key it never saw, not a
+number we asserted.</p>
+<table>
+<tr><th>Simulated at</th><th class="n">Scale</th></tr>
+<tr><td>Shifts</td><td class="n">162 — 156 single shifts + 6 three-shift sequences</td></tr>
+<tr><td>Line layouts</td><td class="n">4 — 15 to 30 stations, one with a parallel-server pair</td></tr>
+<tr><td>Tools</td><td class="n">972, across 8 fault conditions</td></tr>
+<tr><td>Injected faults</td><td class="n">5 kinds × 12 runs each, plus 60 no-fault runs for false-alarm measurement</td></tr>
+</table>
+<p class="src">Source: <code>docs/dataset/v5_dataset.md</code>. The live demo replays one of
+these shifts continuously; §6 measures transfer across the other three layouts.</p>
+
+<h3>2.2 A twin, not a shadow</h3>
 <p>The distinction that matters (Kritzinger's taxonomy): a <i>model</i> is offline, a <i>shadow</i>
 receives data one-way, a <i>twin</i> closes the loop. Our prototype ingests, detects, ranks,
 prescribes and re-reads on a timer, and the causality is <b>enforced structurally</b>: the detector
 is handed a view of the run truncated at <code>now</code>, so it cannot read the future even by
 accident. Verified identical verdicts at 13/13 timepoints against the full-history run.</p>
 
-<h3>2.2 Four tiers of knowledge, never mixed</h3>
+<h3>2.3 Four tiers of knowledge, never mixed</h3>
 <table>
 <tr><th>Tier</th><th>What it is</th><th>Where it comes from</th></tr>
 <tr><td>A — measured</td><td>The station reports it</td><td>PLC state, scans, tool telemetry</td></tr>
@@ -96,13 +122,13 @@ accident. Verified identical verdicts at 13/13 timepoints against the full-histo
 <p>Every value on screen carries its tier. An operator must never see an inferred number and a
 measured one in the same font.</p>
 
-<h3>2.3 How the constraint is found</h3>
+<h3>2.4 How the constraint is found</h3>
 <p>Rank by <b>effective cycle time</b> — work time divided by availability — not by busyness.
 Work time excludes seconds the station spent blocked or starved, so a victim is not charged for
 its neighbour's fault. Each station is compared to <b>its own early baseline</b>, never to takt:
 a station drifting 54→57 s is abnormal even while comfortably inside a 60 s takt.</p>
 
-<h3>2.4 From detection to prescription</h3>
+<h3>2.5 From detection to prescription</h3>
 <p>The twin names the action and what ignoring it costs. The action vocabulary is a small library
 keyed on fault classes the detector itself separates; the <b>ranking and the cost are computed</b>,
 never retrieved. That is the step from descriptive → diagnostic → predictive → <b>prescriptive</b>.</p>
@@ -113,7 +139,7 @@ recommended action; and the expected cost of not acting. <b>An alert that cannot
 is suppressed, not downgraded</b> — a quiet alert with no evidence is still noise, and noise is what
 erodes floor trust. In the recorded run, 7 alerts were suppressed by this rule.</div>
 
-<h3>2.5 What the twin needs from a plant, and what it must never touch</h3>
+<h3>2.6 What the twin needs from a plant, and what it must never touch</h3>
 
 <p>The integration surface is deliberately narrow: <b>five streams a plant already produces.</b>
 Every module downstream is written against this contract rather than against our simulator, which
@@ -321,7 +347,7 @@ a single averaged degradation.</p>
 <li><b>Closed-loop control</b> — outside what any plant grants a prototype.</li>
 <li><b>A historian/MES adapter</b> — the prototype reads its input streams from files, not from
 a live plant connection. Deliberately the only gap between this and Phase 0 on a real line, and
-narrow by design: see §2.5.</li>
+narrow by design: see §2.6.</li>
 </ul>
 <p>Every one of these is a decision we can defend, which is worth more than a claim we cannot.</p>
 
