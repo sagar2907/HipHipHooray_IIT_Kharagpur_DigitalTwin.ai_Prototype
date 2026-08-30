@@ -1,6 +1,7 @@
 # DigitalTwin.ai
 
 **Accenture Innovation Challenge 2026 — Problem Track 4**
+
 Team HipHipHooray · IIT Kharagpur
 
 A live digital twin of a mixed-model vehicle assembly line that shows a floor
